@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>機器視覺檢測</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#161c26;--bg-mid:#1d2535;--bg-light:#263040;--accent:#4fc3f7;--accent2:#00e5cc;--text:#f0f4fc;--dim:#b8cce0;--border:rgba(79,195,247,0.22);--nav-h:56px}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);font-size:16px}
+
+/* TOP NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2.5rem;height:var(--nav-h);
+  background:rgba(22,28,38,.92);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{
+  font-family:'Share Tech Mono',monospace;
+  font-size:.85rem;letter-spacing:.15em;color:var(--accent);
+  white-space:nowrap;
+}
+.nav-links{display:flex;gap:0}
+.nav-link{
+  padding:.4rem 1.1rem;cursor:pointer;
+  color:var(--dim);font-size:.88rem;letter-spacing:.05em;
+  transition:color .2s;position:relative;
+  background:transparent;border:none;font-family:inherit;
+  white-space:nowrap;
+}
+.nav-link::after{
+  content:'';position:absolute;bottom:-1px;left:.8rem;right:.8rem;
+  height:2px;background:var(--accent);
+  transform:scaleX(0);transform-origin:center;
+  transition:transform .22s;
+}
+.nav-link:hover{color:var(--text)}
+.nav-link.active{color:var(--text)}
+.nav-link.active::after{transform:scaleX(1)}
+
+/* PROGRESS */
+.prog-bar{position:fixed;top:var(--nav-h);left:0;right:0;height:2px;background:rgba(255,255,255,.05);z-index:300}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .45s cubic-bezier(.4,0,.2,1)}
+
+/* MAIN */
+.main{margin-top:var(--nav-h);height:calc(100vh - var(--nav-h));overflow:hidden;position:relative}
+.track{display:flex;width:500%;height:100%;transition:transform .45s cubic-bezier(.4,0,.2,1);will-change:transform}
+.page{width:20%;height:100%;overflow-y:auto;flex-shrink:0}
+.page::-webkit-scrollbar{width:4px}
+.page::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* PAGE ARROWS */
+.p-nav{position:fixed;bottom:1.8rem;right:1.8rem;display:flex;gap:.45rem;z-index:200}
+.p-btn{width:38px;height:38px;border-radius:50%;background:var(--bg-mid);border:1px solid var(--border);color:var(--dim);font-size:.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s}
+.p-btn:hover{border-color:var(--accent);color:var(--accent)}
+.p-btn:disabled{opacity:.2;cursor:default}
+
+/* SHARED */
+.pi{padding:3.2rem 5% 4rem;max-width:1100px;margin:0 auto}
+.ptag{font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.22em;color:var(--accent2);margin-bottom:.65rem}
+.ptitle{font-size:clamp(1.8rem,3vw,2.5rem);font-weight:700;line-height:1.15;margin-bottom:.75rem}
+.ptitle span{color:var(--accent)}
+.divider{width:42px;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));margin:.9rem 0 1.3rem;border-radius:2px}
+.pdesc{font-size:1rem;line-height:1.85;color:var(--dim);max-width:680px;margin-bottom:.8rem}
+.pnote{font-size:.9rem;line-height:1.8;color:#708898;max-width:680px;margin-bottom:1.8rem;padding-left:.9rem;border-left:2px solid var(--border)}
+
+/* HOME */
+#ph{background:linear-gradient(145deg,#111820 0%,#161c26 55%,#1a2535 100%)}
+.hgeo{position:absolute;inset:0;opacity:.11;pointer-events:none;background-image:linear-gradient(60deg,transparent 40%,rgba(79,195,247,.2) 41%,rgba(79,195,247,.2) 59%,transparent 60%),linear-gradient(120deg,transparent 40%,rgba(0,229,204,.12) 41%,rgba(0,229,204,.12) 59%,transparent 60%);background-size:70px 70px}
+.hscan{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.3;animation:scan 5s linear infinite;pointer-events:none}
+@keyframes scan{from{top:5%}to{top:95%}}
+.hinner{position:relative;z-index:1;padding:4rem 5% 3.5rem;max-width:1100px;margin:0 auto}
+.hlabel{font-family:'Share Tech Mono',monospace;font-size:.75rem;letter-spacing:.22em;color:var(--accent2);margin-bottom:1.1rem;opacity:0;animation:fu .6s .1s forwards}
+.htitle{font-size:clamp(2.5rem,5vw,4.2rem);font-weight:700;line-height:1.08;opacity:0;animation:fu .7s .25s forwards}
+.htitle em{font-style:normal;color:var(--accent)}
+.hsub{margin-top:1.1rem;max-width:500px;font-size:1.05rem;line-height:1.82;color:var(--dim);opacity:0;animation:fu .7s .4s forwards}
+@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.aoi-box{background:var(--bg-mid);border:1px solid var(--border);border-radius:6px;padding:1.3rem 1.5rem;margin:2rem 0 1.5rem;max-width:620px;opacity:0;animation:fu .7s .55s forwards}
+.aoi-box .abl{font-family:'Share Tech Mono',monospace;font-size:.7rem;letter-spacing:.18em;color:var(--accent2);margin-bottom:.45rem}
+.aoi-box .abt{font-size:.98rem;line-height:1.82;color:var(--text)}
+.aoi-box .abt strong{color:var(--accent)}
+.hgrid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;max-width:640px;opacity:0;animation:fu .7s .68s forwards}
+.hcard{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:1.1rem 1.3rem;transition:border-color .2s,transform .18s}
+.hcard:hover{border-color:var(--accent);transform:translateY(-2px)}
+.hci{font-size:1.4rem;margin-bottom:.55rem}
+.hct{font-size:.95rem;font-weight:700;margin-bottom:.3rem}
+.hcd{font-size:.85rem;line-height:1.7;color:var(--dim)}
+.func-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;margin:.9rem 0 1.5rem;max-width:600px;opacity:0;animation:fu .7s .82s forwards}
+.fi{background:rgba(79,195,247,.07);border:1px solid var(--border);border-radius:5px;padding:.75rem 1rem}
+.fi-n{font-size:.9rem;font-weight:700;color:var(--accent);margin-bottom:.2rem}
+.fi-e{font-size:.72rem;color:var(--dim);font-family:'Share Tech Mono',monospace;letter-spacing:.04em}
+.tech-tags{display:flex;flex-wrap:wrap;gap:.55rem;max-width:600px;opacity:0;animation:fu .7s .95s forwards}
+.tt{border-radius:4px;padding:.45rem .9rem;font-size:.88rem}
+.tt-a{background:rgba(79,195,247,.1);border:1px solid var(--border);color:var(--accent)}
+.tt-b{background:rgba(0,229,204,.08);border:1px solid rgba(0,229,204,.22);color:var(--accent2)}
+
+/* IMAGING MODULE */
+#pi{background:var(--bg-mid)}
+.mtabs{display:flex;gap:.45rem;margin-bottom:1.8rem;flex-wrap:wrap}
+.mtab{padding:.5rem 1.25rem;border-radius:3px;cursor:pointer;font-size:.9rem;font-weight:700;border:1px solid var(--border);color:var(--dim);background:transparent;transition:all .18s}
+.mtab:hover{color:var(--text);border-color:var(--accent)}
+.mtab.active{background:var(--accent);color:#0d1117;border-color:var(--accent)}
+.mpanel{display:none}
+.mpanel.active{display:block}
+.thero{display:grid;grid-template-columns:1fr 1fr;gap:1.8rem;align-items:start;margin-bottom:2.2rem}
+@media(max-width:680px){.thero{grid-template-columns:1fr}}
+.thl{font-family:'Share Tech Mono',monospace;font-size:.73rem;letter-spacing:.2em;color:var(--accent2);margin-bottom:.65rem}
+.tht{font-size:clamp(1.4rem,2.2vw,1.9rem);font-weight:700;line-height:1.18;margin-bottom:.85rem}
+.thd{font-size:.97rem;line-height:1.82;color:var(--dim)}
+.srow{display:flex;gap:1.3rem;flex-wrap:wrap;margin-top:1.3rem}
+.si{display:flex;flex-direction:column;gap:.18rem}
+.sn{font-family:'Share Tech Mono',monospace;font-size:1.65rem;font-weight:700;color:var(--accent);line-height:1}
+.sl{font-size:.8rem;color:var(--dim)}
+.thvis{background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.3rem;display:flex;flex-direction:column;gap:.75rem}
+.vc{background:var(--bg);border-radius:5px;padding:.95rem 1.05rem}
+.vcl{font-size:.78rem;font-weight:700;letter-spacing:.08em;margin-bottom:.3rem}
+.vct{font-size:.98rem;font-weight:700;color:var(--text);margin-bottom:.22rem}
+.vcd{font-size:.9rem;line-height:1.7;color:var(--dim)}
+.vwarn{font-size:.87rem;line-height:1.66;color:var(--dim);padding:.45rem .15rem 0;border-top:1px solid var(--border);margin-top:.05rem}
+
+.elist{display:flex;flex-direction:column;gap:.6rem}
+.ecard{border:1px solid var(--border);border-radius:6px;overflow:hidden;transition:border-color .2s}
+.ecard:hover{border-color:rgba(79,195,247,.4)}
+.etrig{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.3rem;cursor:pointer;background:var(--bg-light);user-select:none;transition:background .15s}
+.etrig:hover{background:#2a3545}
+.etl{display:flex;align-items:center;gap:.9rem}
+.eico{font-size:1.15rem;flex-shrink:0}
+.etitle{font-size:.97rem;font-weight:700}
+.esum{font-size:.86rem;color:var(--dim);margin-top:.13rem}
+.earr{color:var(--dim);font-size:.78rem;transition:transform .25s;flex-shrink:0}
+.ecard.open .earr{transform:rotate(180deg)}
+.ebody{max-height:0;overflow:hidden;transition:max-height .35s ease,padding .25s;padding:0 1.3rem;font-size:.96rem;line-height:1.86;color:var(--dim);background:var(--bg-mid)}
+.ebody p{margin-bottom:.82rem}
+.ebody p:last-child{margin-bottom:0}
+.ecard.open .ebody{max-height:900px;padding:1.2rem 1.4rem}
+.ebody strong{color:var(--text)}
+.ebody em{color:var(--accent2);font-style:normal}
+.mcmp{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.75rem}
+.mc{background:var(--bg-light);border:1px solid var(--border);border-radius:5px;padding:.95rem}
+.mct{font-family:'Share Tech Mono',monospace;font-size:.7rem;letter-spacing:.12em;color:var(--accent2);margin-bottom:.38rem}
+.mcn{font-size:.95rem;font-weight:700;margin-bottom:.32rem}
+.mcb{font-size:.86rem;line-height:1.72;color:var(--dim)}
+
+/* LIGHT CARDS */
+.lcards{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem;margin:1.1rem 0 1.7rem}
+@media(max-width:560px){.lcards{grid-template-columns:1fr}}
+.lc{border:1px solid var(--border);border-radius:6px;padding:1.1rem;transition:border-color .2s,transform .18s}
+.lc:hover{border-color:var(--accent2);transform:translateY(-2px)}
+.lci{font-size:1.5rem;margin-bottom:.45rem}
+.lcn{font-size:.95rem;font-weight:700;margin-bottom:.32rem}
+.lcd{font-size:.86rem;line-height:1.75;color:var(--dim)}
+
+/* PIPELINE */
+#pp{background:var(--bg)}
+.pipeline{display:flex;flex-wrap:wrap;gap:0;margin-top:1.1rem}
+.ps{flex:1;min-width:148px;background:var(--bg-light);border:1px solid var(--border);padding:1.3rem 1.1rem;position:relative;transition:background .2s}
+.ps:not(:last-child)::after{content:'▶';position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:var(--accent);font-size:.72rem;z-index:2}
+.ps:hover{background:#2a3545}
+.psn{font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--accent2);letter-spacing:.12em;margin-bottom:.42rem}
+.pst{font-size:.95rem;font-weight:700;margin-bottom:.42rem}
+.psb{font-size:.86rem;line-height:1.7;color:var(--dim)}
+
+/* APP */
+#pa{background:var(--bg-mid)}
+.agrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:1.4rem;margin-top:.9rem}
+.ac{border:1px solid var(--border);border-radius:6px;overflow:hidden;transition:transform .22s,border-color .22s}
+.ac:hover{transform:translateY(-4px);border-color:var(--accent2)}
+.ach{padding:1.05rem 1.35rem;font-size:.87rem;font-weight:700;letter-spacing:.07em}
+.acb{padding:1.05rem 1.35rem;font-size:.9rem;line-height:1.78;color:var(--dim)}
+.tags{display:flex;flex-wrap:wrap;gap:.42rem;margin-top:.85rem}
+.tag{font-size:.7rem;padding:.2rem .6rem;border-radius:20px;border:1px solid var(--border);color:var(--accent2);letter-spacing:.04em}
+.h1{background:linear-gradient(90deg,#1a3040,#1d2535);border-bottom:2px solid #4fc3f7}
+.h2{background:linear-gradient(90deg,#1a2e20,#1d2535);border-bottom:2px solid #66bb6a}
+.h3{background:linear-gradient(90deg,#2e1a30,#1d2535);border-bottom:2px solid #ce93d8}
+.h4{background:linear-gradient(90deg,#302010,#1d2535);border-bottom:2px solid #ffb74d}
+
+/* REPORT */
+#pr{background:var(--bg)}
+.rl{display:grid;grid-template-columns:1fr 1.3fr;gap:2.5rem;align-items:start}
+@media(max-width:660px){.rl{grid-template-columns:1fr}}
+.rcl{display:flex;flex-direction:column;gap:.85rem}
+.ri{display:flex;gap:.95rem;align-items:flex-start;padding:.95rem 1.15rem;background:var(--bg-mid);border:1px solid var(--border);border-radius:5px;transition:border-color .2s}
+.ri:hover{border-color:var(--accent)}
+.ricon{font-size:1.2rem;flex-shrink:0;margin-top:.1rem}
+.rit{font-size:.93rem;font-weight:700;margin-bottom:.28rem}
+.rid{font-size:.86rem;line-height:1.7;color:var(--dim)}
+.rf{background:var(--bg-mid);border:1px solid var(--border);border-radius:6px;padding:1.7rem}
+.rf h3{font-size:.97rem;font-weight:700;margin-bottom:1rem;color:var(--accent2)}
+.fr{display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.fr:last-child{border-bottom:none}
+.frl{font-size:.9rem;color:var(--dim)}
+.frv{font-size:.9rem;font-weight:600;color:var(--text)}
+
+/* shared vc border colors */
+.vc-a{border-left:2px solid var(--accent)}
+.vc-b{border-left:2px solid var(--accent2)}
+.vc-c{border-left:2px solid #7090a0}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">MVS // 機器視覺</div>
+  <div class="nav-links">
+    <button class="nav-link active" onclick="goTo(0)">首頁</button>
+    <button class="nav-link" onclick="goTo(1)">取像模組</button>
+    <button class="nav-link" onclick="goTo(2)">影像處理</button>
+    <button class="nav-link" onclick="goTo(3)">檢測應用</button>
+    <button class="nav-link" onclick="goTo(4)">專題報告</button>
+  </div>
+</nav>
+
+<div class="prog-bar"><div class="prog-fill" id="pf" style="width:20%"></div></div>
+
+<main class="main">
+<div class="track" id="track">
+
+<!-- ════ 00 首頁 ════ -->
+<div class="page" id="ph">
+  <div class="hgeo"></div><div class="hscan"></div>
+  <div class="hinner">
+    <div class="hlabel">// AUTOMATED OPTICAL INSPECTION</div>
+    <h1 class="htitle">機器<em>視覺</em><br>檢測系統</h1>
+    <p class="hsub">讓機器看懂世界，取代人眼在生產線上重複、高速、長時間的品質判斷工作。</p>
+
+    <div class="aoi-box">
+      <div class="abl">// AOI 定義</div>
+      <div class="abt">以<strong>非接觸</strong>的方式自動擷取影像，並透過自動分析，從中抽取資料以<strong>控制程序或動作</strong>——這就是機器視覺檢測（AOI）的本質。</div>
+    </div>
+
+    <div class="ptag" style="margin-top:0">// 為什麼需要它？</div>
+    <div class="hgrid" style="margin-top:.8rem">
+      <div class="hcard"><div class="hci">😓</div><div class="hct">人工檢測的極限</div><div class="hcd">速度慢、容易疲勞、判斷標準因人而異——在高速大量生產下根本跟不上。</div></div>
+      <div class="hcard"><div class="hci">🤖</div><div class="hct">AOI 的優勢</div><div class="hcd">全自動、24 小時穩定運作、毫秒級反應、判斷標準一致，直接改進人工的所有缺點。</div></div>
+      <div class="hcard"><div class="hci">🏭</div><div class="hct">自動化大量生產</div><div class="hcd">現代製造業需要在高速產線上同時確認品質，人眼已經跟不上這個速度。</div></div>
+      <div class="hcard"><div class="hci">👁️</div><div class="hct">人類 vs 機器視覺</div><div class="hcd">人類視覺擅長複雜判斷；機器視覺擅長重複性工作——兩者各有最適合的場域。</div></div>
+    </div>
+
+    <div class="ptag" style="margin-top:2.2rem">// 機器視覺的六大功能</div>
+    <div class="func-grid">
+      <div class="fi"><div class="fi-n">定位</div><div class="fi-e">Positioning</div></div>
+      <div class="fi"><div class="fi-n">識別</div><div class="fi-e">Recognition</div></div>
+      <div class="fi"><div class="fi-n">辨識</div><div class="fi-e">Identification</div></div>
+      <div class="fi"><div class="fi-n">瑕疵檢測</div><div class="fi-e">Defect Detection</div></div>
+      <div class="fi"><div class="fi-n">驗證</div><div class="fi-e">Verification</div></div>
+      <div class="fi"><div class="fi-n">量測</div><div class="fi-e">Measurement</div></div>
+    </div>
+
+    <div class="ptag" style="margin-top:2rem">// AOI 所需的技術領域</div>
+    <div class="tech-tags" style="margin-top:.8rem">
+      <span class="tt tt-a">光學設計</span><span class="tt tt-a">機台設計</span><span class="tt tt-a">運動控制</span><span class="tt tt-a">系統整合</span>
+      <span class="tt tt-b">影像處理</span><span class="tt tt-b">特徵擷取</span><span class="tt tt-b">尺寸量測</span><span class="tt tt-b">瑕疵檢測</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════ 01 取像模組 ════ -->
+<div class="page" id="pi">
+<div class="pi">
+  <div class="ptag">// 01 · IMAGING MODULE</div>
+  <h2 class="ptitle">取像模組</h2>
+  <div class="divider"></div>
+  <p class="pdesc">機器視覺系統的眼睛。相機、鏡頭、光源三者缺一不可，任何一個選錯，後端再強的演算法也無法補救。</p>
+
+  <div class="mtabs">
+    <button class="mtab active" onclick="swTab(event,'cam')">📷 相機</button>
+    <button class="mtab" onclick="swTab(event,'lens')">🔭 鏡頭</button>
+    <button class="mtab" onclick="swTab(event,'light')">💡 光源</button>
+  </div>
+
+  <!-- 相機 -->
+  <div class="mpanel active" id="p-cam">
+    <div class="thero">
+      <div>
+        <div class="thl">// INDUSTRIAL CAMERA</div>
+        <div class="tht">工業相機<br>把光轉換成像素</div>
+        <div class="thd">人眼的運作方式是：光打到物體、反射進眼睛、水晶體聚焦成像在視網膜、大腦判斷。機器視覺做的事幾乎一樣——只是把「眼睛」換成相機和鏡頭，把「大腦」換成電腦演算法。差別在於機器不會累、不會分心，而且精度可以遠超人眼。</div>
+        <div class="srow">
+          <div class="si"><span class="sn">24/7</span><span class="sl">連續運作不間斷</span></div>
+          <div class="si"><span class="sn">μs</span><span class="sl">精確到微秒的觸發</span></div>
+          <div class="si"><span class="sn">0</span><span class="sl">允許的掉幀數</span></div>
+        </div>
+      </div>
+      <div class="thvis">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--accent2);letter-spacing:.15em;margin-bottom:.6rem">// 工業相機做到什麼？</div>
+        <div class="vc vc-a"><div class="vcl" style="color:var(--accent)">看得多精細？</div><div class="vct">解析度</div><div class="vcd">感光元件上的像素愈多，影像能呈現的細節就愈多——就像手機從 800 萬升到 4800 萬畫素的差距。</div></div>
+        <div class="vc vc-b"><div class="vcl" style="color:var(--accent2)">移動中的物件拍得清楚嗎？</div><div class="vct">快門類型</div><div class="vcd">一般相機拍移動中的東西會變形。工業相機有專門解決這個問題的技術——在選型時這是決定性的因素。</div></div>
+        <div class="vc vc-c"><div class="vcl" style="color:#90aabf">影像怎麼傳到電腦？</div><div class="vct">傳輸介面</div><div class="vcd">不同的連接方式決定了能拍多快、相機離電腦能有多遠——兩者通常無法同時兼顧。</div></div>
+      </div>
+    </div>
+    <div class="elist">
+      <div class="ecard">
+        <div class="etrig" onclick="tog(this)"><div class="etl"><span class="eico">📐</span><div><div class="etitle">解析度與 Pixel Size——精細度的兩個面向</div><div class="esum">像素愈多看得愈細，但像素愈大反而感光更好——要看場景決定</div></div></div><span class="earr">▼</span></div>
+        <div class="ebody"><p>解析度就是影像的「格子數」，格子愈多、細節愈豐富。但格子多不代表每格就一定看得清楚——每個格子（像素）的實體大小（Pixel Size）決定它能收集多少光。像素愈大，低光環境下雜訊愈低、影像愈乾淨；像素愈小，同樣面積能塞進更多格子，解析度更高，但在光線不足時影像容易出現雜訊。</p><p>選型時先確認最小可偵測的缺陷大小，確保那個缺陷至少能佔到影像上的 5 個像素以上，不然演算法根本「看不見」它。</p></div>
+      </div>
+      <div class="ecard">
+        <div class="etrig" onclick="tog(this)"><div class="etl"><span class="eico">⚡</span><div><div class="etitle">Rolling Shutter vs Global Shutter——物件在動就一定要選對</div><div class="esum">拍移動中的物件，選錯快門類型，邊緣會歪掉</div></div></div><span class="earr">▼</span></div>
+        <div class="ebody"><p>想像你用掃描機掃一張紙——掃描頭從上往下一行一行掃。如果掃到一半紙張突然移動，掃出來的影像就會錯位變形。Rolling Shutter 的原理和這個一樣，感光元件逐列曝光，物件只要在移動，邊緣就會歪斜——這在生產線上是很嚴重的問題。</p><div class="mcmp"><div class="mc"><div class="mct">ROLLING SHUTTER</div><div class="mcn">逐列曝光</div><div class="mcb">成本低。靜止或慢速物件適用。物件移動時邊緣出現果凍變形，本來的直線會變成斜的。</div></div><div class="mc"><div class="mct">GLOBAL SHUTTER</div><div class="mcn">全幅同步曝光</div><div class="mcb">所有像素在同一瞬間同時曝光，物件怎麼動都不會變形。成本較高，是高速生產線的必要選擇。</div></div></div></div>
+      </div>
+      <div class="ecard">
+        <div class="etrig" onclick="tog(this)"><div class="etl"><span class="eico">🔌</span><div><div class="etitle">傳輸介面——速度快，還是距離遠？</div><div class="esum">GigE 可以拉很遠，USB3 速度快好安裝，CoaXPress 兩個都要就選這個</div></div></div><span class="earr">▼</span></div>
+        <div class="ebody"><p>影像從相機傳到電腦就像水管送水——管子愈粗（頻寬愈大）每秒能傳的影像愈多，但管子拉得愈長阻力就愈大。</p><p><strong>GigE Vision</strong>：走一般網路線，最遠能拉 100 公尺，適合機台大、相機離電腦很遠的場合，但頻寬只有 1 Gbps，高速場合可能不夠用。</p><p><strong>USB3 Vision</strong>：就像電腦的 USB 插槽，佈線最簡單，速度也快（5 Gbps），缺點是距離只有 10 公尺，適合桌上型設備或實驗室快速建置。</p><p><strong>CoaXPress</strong>：高階選項，頻寬最高達 25 Gbps，距離也可以到 68 公尺，連接線本身還整合了電源，不用另外拉電線。速度快、距離遠都要就選這個，但成本最高。</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 鏡頭 -->
+  <div class="mpanel" id="p-lens">
+    <div class="thero">
+      <div>
+        <div class="thl">// LENS SELECTION</div>
+        <div class="tht">鏡頭<br>決定「看多大、看多細」</div>
+        <div class="thd">鏡頭就像眼睛的焦距——拉遠看全景，拉近看細節，但兩件事沒辦法同時做到。選鏡頭的核心，就是在「視野大小」和「看得多細」之間找到剛好的平衡點。</div>
+      </div>
+      <div class="thvis">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--accent2);letter-spacing:.15em;margin-bottom:.6rem">// 鏡頭決定兩件事</div>
+        <div class="vc vc-a"><div class="vcl" style="color:var(--accent)">一次能看多大的範圍？</div><div class="vct">視野（FOV）</div><div class="vcd">倍率愈低，鏡頭「退得愈遠」，一次能框住的範圍愈大——就像站遠一點拍團體照。</div></div>
+        <div class="vc vc-b"><div class="vcl" style="color:var(--accent2)">最細能看到多小的東西？</div><div class="vct">像素解析度</div><div class="vcd">影像裡每一個像素，代表現實中多大的一塊面積。這個數字愈小，就能看到愈細的缺陷。</div></div>
+        <div class="vwarn">⚠️ 兩者互相取捨——倍率調高看得更細但範圍縮小；想同時要求「又大又細」，只能換更大的感光元件。</div>
+      </div>
+    </div>
+    <div class="elist">
+      <div class="ecard">
+        <div class="etrig" onclick="tog(this)"><div class="etl"><span class="eico">🎯</span><div><div class="etitle">Image Circle——鏡頭能投影多大的圓？</div><div class="esum">感光元件必須完整落在這個圓圈內，否則四角會黑掉</div></div></div><span class="earr">▼</span></div>
+        <div class="ebody"><p>鏡頭投影出來的清晰影像，形狀其實是一個圓，不是方形。相機裡的感光元件是矩形的，必須完整塞進這個圓裡面——如果感光元件的對角線比圓的直徑還長，四個角就會超出圓的範圍，那裡的影像會變暗、變模糊，這就是「暗角」。</p><p>選鏡頭時，確認感光元件的對角線長度小於鏡頭標示的 Image Circle 數值就沒問題。</p></div>
+      </div>
+      <div class="ecard">
+        <div class="etrig" onclick="tog(this)"><div class="etl"><span class="eico">🔩</span><div><div class="etitle">C-Mount vs CS-Mount——差 5mm，搭錯就對不了焦</div><div class="esum">相機接口和鏡頭接口必須匹配，否則無法正確成像</div></div></div><span class="earr">▼</span></div>
+        <div class="ebody"><p>C-Mount 和 CS-Mount 是工業相機最常見的兩種鏡頭接口，外觀幾乎一樣，差別只在鏡頭裝上去之後，鏡片到感光元件的距離不同——C-Mount 是 17.526 mm，CS-Mount 是 12.5 mm，差了 5 mm。</p><p>這 5 mm 的差距如果沒有補上，鏡頭的焦點就不會落在感光元件上，整張影像都是模糊的。<strong>C-Mount 相機只能裝 C-Mount 鏡頭</strong>。CS-Mount 相機比較彈性，兩種都能用，但裝 C-Mount 鏡頭時，中間要夾一個 5 mm 的延伸環來補足。</p></div>
+      </div>
+      <div class="ecard">
+        <div class="etrig" onclick="tog(this)"><div class="etl"><span class="eico">📏</span><div><div class="etitle">焦距、工作距離、光圈、畸變</div><div class="esum">選鏡頭前必須確認的四個實際限制</div></div></div><span class="earr">▼</span></div>
+        <div class="ebody"><p><strong>焦距 f</strong>：焦距愈長，在相同倍率下工作距離就愈遠——這反而是好事。機台裡如果有障礙物擋住相機，選長焦距鏡頭可以把相機「退到更遠的地方」，繞開障礙還能保持同樣的拍攝倍率。</p><p><strong>工作距離 WD</strong>：鏡頭前端到物件的距離。如果想讓鏡頭在更近的距離對焦，可以在相機和鏡頭之間夾入<em>近攝接寫環（Extension Tube）</em>，不換鏡頭就能實現近距離拍攝。</p><p><strong>光圈</strong>：光圈開大，進光量多、景深淺（只有一個平面清楚）；光圈縮小，景深加大（前後範圍都清楚），但影像變暗。檢測 3D 立體物件通常需要縮小光圈。</p><p><strong>畸變</strong>：便宜的鏡頭會讓直線看起來微微彎曲。多數外觀檢測不在意這個，但如果要量測尺寸，就必須選低畸變的鏡頭，否則量出來的數字會有誤差。</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 光源 -->
+  <div class="mpanel" id="p-light">
+    <div class="thero">
+      <div>
+        <div class="thl">// LIGHTING DESIGN</div>
+        <div class="tht">光源<br>讓缺陷自己浮現</div>
+        <div class="thd">光源設計是機器視覺裡最容易被忽略、卻最能左右結果的環節。同一個缺陷，打對光能讓它在黑暗中發亮；打錯光則讓它完全消失——後端再強的演算法都補救不了。</div>
+      </div>
+      <div class="thvis">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--accent2);letter-spacing:.15em;margin-bottom:.6rem">// 打光要做到兩件事</div>
+        <div class="vc vc-a"><div class="vcl" style="color:var(--accent)">讓缺陷浮現</div><div class="vct">凸顯目標特徵</div><div class="vcd">好的打光讓刮痕、汙點、缺口在影像裡變得明顯——就像用手電筒斜打牆壁，凹凸不平的地方全都現形。</div></div>
+        <div class="vc vc-b"><div class="vcl" style="color:var(--accent2)">讓背景消失</div><div class="vct">壓制背景干擾</div><div class="vcd">不重要的背景紋理和反光如果太明顯，演算法會不知道該看哪裡。打光要讓背景盡量單純、乾淨。</div></div>
+        <div class="vwarn">💡 現代工業幾乎全用 LED——壽命長、亮度可精確控制，還能在快門瞬間閃出數倍亮度，凍結高速移動的物件。</div>
+      </div>
+    </div>
+    <p class="pdesc" style="margin-bottom:.9rem">打光的方向決定影像能呈現什麼資訊，三種核心方式各有適用場景：</p>
+    <div class="lcards">
+      <div class="lc"><div class="lci">☀️</div><div class="lcn">明視野</div><div class="lcd">正面打光，呈現反射率差異。適合表面顏色、印刷品質、電路板佈線。</div></div>
+      <div class="lc"><div class="lci">🌑</div><div class="lcn">暗視野</div><div class="lcd">低角度斜打，只收散射光。缺陷亮、背景黑，對比極強。刮痕、毛邊首選。</div></div>
+      <div class="lc"><div class="lci">🔦</div><div class="lcn">穿透光</div><div class="lcd">從背面打，物件形成剪影。適合輪廓量測、通孔檢測、透明物件。</div></div>
+    </div>
+    <div class="elist">
+      <div class="ecard">
+        <div class="etrig" onclick="tog(this)"><div class="etl"><span class="eico">🔦</span><div><div class="etitle">LED 光源的形狀——不同形狀解決不同問題</div><div class="esum">環形光、條形光、背光板……形狀不同，打出來的效果完全不一樣</div></div></div><span class="earr">▼</span></div>
+        <div class="ebody"><p style="margin-bottom:.9rem">LED 可以組裝成各種形狀，每種形狀有它最適合的應用場合：</p>
+          <div style="display:flex;flex-direction:column;gap:.55rem">
+            <div style="background:var(--bg-light);border-radius:5px;padding:.8rem 1rem;border-left:2px solid var(--accent)"><div style="font-size:.87rem;font-weight:700;color:var(--text);margin-bottom:.22rem">💍 無影環光（Dome Light）</div><div style="font-size:.9rem;line-height:1.7;color:var(--dim)">半球形漫射光源，從所有角度均勻打光，消除陰影和高反射面的眩光。適合金屬零件、電路板等高反光表面的外觀檢測。</div></div>
+            <div style="background:var(--bg-light);border-radius:5px;padding:.8rem 1rem;border-left:2px solid var(--accent)"><div style="font-size:.87rem;font-weight:700;color:var(--text);margin-bottom:.22rem">⭕ 環形光（Ring Light）</div><div style="font-size:.9rem;line-height:1.7;color:var(--dim)">圍繞鏡頭一圈的 LED 陣列，正面均勻照射。是最常見的通用型光源，適合一般表面外觀檢測。</div></div>
+            <div style="background:var(--bg-light);border-radius:5px;padding:.8rem 1rem;border-left:2px solid var(--accent)"><div style="font-size:.87rem;font-weight:700;color:var(--text);margin-bottom:.22rem">📏 條形光（Bar Light）</div><div style="font-size:.9rem;line-height:1.7;color:var(--dim)">單方向線性光源，強調特定方向的陰影與高度差。適合邊緣檢測、刮痕、焊錫高度量測，也常搭配線掃描相機使用。</div></div>
+            <div style="background:var(--bg-light);border-radius:5px;padding:.8rem 1rem;border-left:2px solid var(--accent)"><div style="font-size:.87rem;font-weight:700;color:var(--text);margin-bottom:.22rem">🎯 外同軸光（Coaxial Light）</div><div style="font-size:.9rem;line-height:1.7;color:var(--dim)">光線從鏡頭內部沿光軸方向射出，利用半反射鏡導光。適合極度平坦的高反光表面（如晶圓、金屬蓋板），能讓微細刮痕現形。</div></div>
+            <div style="background:var(--bg-light);border-radius:5px;padding:.8rem 1rem;border-left:2px solid var(--accent)"><div style="font-size:.87rem;font-weight:700;color:var(--text);margin-bottom:.22rem">⬛ 背光板（Back Light）</div><div style="font-size:.9rem;line-height:1.7;color:var(--dim)">放在物件背面，產生均勻亮面讓物件呈現黑色剪影。尺寸量測的首選——輪廓最清晰，量測誤差最小。</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="ecard">
+        <div class="etrig" onclick="tog(this)"><div class="etl"><span class="eico">💡</span><div><div class="etitle">各種光源的特色與選擇</div><div class="esum">鎢絲燈熱、螢光燈老化快、氙氣燈貴——現代工業幾乎全用 LED</div></div></div><span class="earr">▼</span></div>
+        <div class="ebody"><p style="margin-bottom:.9rem">光源發展了很多種類，但每種都有它的取捨，最終 LED 幾乎成為工業視覺的唯一答案。</p>
+          <div style="display:flex;flex-direction:column;gap:.6rem">
+            <div style="background:var(--bg-light);border-radius:5px;padding:.8rem 1rem;border-left:2px solid #f87171"><div style="font-size:.87rem;font-weight:700;color:#f87171;margin-bottom:.22rem">🔴 鎢絲燈 / 鹵素燈</div><div style="font-size:.9rem;line-height:1.7;color:var(--dim)">就是最傳統的燈泡。雖然亮，但有 95% 的電能都變成熱散掉，效率極低。壽命短、老化快，而且沒辦法做頻閃控制。</div></div>
+            <div style="background:var(--bg-light);border-radius:5px;padding:.8rem 1rem;border-left:2px solid #fbbf24"><div style="font-size:.87rem;font-weight:700;color:#fbbf24;margin-bottom:.22rem">🟡 螢光燈</div><div style="font-size:.9rem;line-height:1.7;color:var(--dim)">便宜、面積大、亮度均勻，曾經是大面積打光的選擇。但光譜不均勻，亮度會隨時間悄悄衰減，同樣沒有閃頻控制。</div></div>
+            <div style="background:var(--bg-light);border-radius:5px;padding:.8rem 1rem;border-left:2px solid #a78bfa"><div style="font-size:.87rem;font-weight:700;color:#a78bfa;margin-bottom:.22rem">🟣 氙氣燈（Xenon）</div><div style="font-size:.9rem;line-height:1.7;color:var(--dim)">能做超高速閃光（一秒 200 次，每次 1–20μs），光色接近自然日光。但供電系統複雜、成本高昂，現在只剩少數高速特殊應用還在用。</div></div>
+            <div style="background:var(--bg-light);border-radius:5px;padding:.8rem 1rem;border-left:2px solid var(--accent)"><div style="font-size:.87rem;font-weight:700;color:var(--accent);margin-bottom:.22rem">🔵 LED ⭐ 現代工業首選</div><div style="font-size:.9rem;line-height:1.7;color:var(--dim)">壽命超過 50,000 小時、發熱量低、亮度精確可調、可做頻閃控制，能組成任意形狀，並可選擇單一波長（紅、綠、藍、IR、NUV）。幾乎沒有明顯缺點，是目前的絕對主流。</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="ecard">
+        <div class="etrig" onclick="tog(this)"><div class="etl"><span class="eico">🎨</span><div><div class="etitle">光的顏色也是工具</div><div class="esum">同色光讓背景消失，互補色光讓邊緣更銳利</div></div></div><span class="earr">▼</span></div>
+        <div class="ebody"><p>你有沒有注意到，在黃色路燈下，鮮豔的顏色看起來都變得暗淡？這是因為特定波長的光打在相同顏色的表面上，那個顏色的對比會被壓低、幾乎消失。反過來，用互補色的光，就能讓那個顏色的區域顯得更深更黑，邊緣更銳利。</p><p>實際案例：用<strong>紅色 LED</strong> 拍一個紅色物件上的黑色印刷文字，紅色背景幾乎消失，黑色文字反而跳出來更清楚。工業上常用紅、綠、藍、白、紅外（IR）和近紫外（NUV），各自在不同材質下有最佳效果——但沒有萬用答案，實際上還是要動手試。</p></div>
+      </div>
+      <div class="ecard">
+        <div class="etrig" onclick="tog(this)"><div class="etl"><span class="eico">⚡</span><div><div class="etitle">頻閃控制——讓光源在關鍵瞬間爆發</div><div class="esum">快門開啟的那一瞬，光源閃出平時數倍的亮度，凍結高速物件</div></div></div><span class="earr">▼</span></div>
+        <div class="ebody"><p>拍高速移動的物件時，曝光時間必須極短，否則影像會模糊。但曝光時間短，進光量就少，影像會太暗。頻閃光源解決了這個矛盾——在相機快門開啟的那一微秒，以平時數倍的強度猛烈閃光，讓影像既夠亮又不模糊。</p><p>這樣做還有一個好處：LED 光源平時處於低功率待機，只在必要時全力爆發，<strong>實際壽命比連續照明長好幾倍</strong>。搭配 Global Shutter 相機使用效果最佳。</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════ 02 影像處理 ════ -->
+<div class="page" id="pp">
+<div class="pi">
+  <div class="ptag">// 02 · IMAGE PROCESSING</div>
+  <h2 class="ptitle">影像處理</h2>
+  <div class="divider"></div>
+  <p class="pdesc">影像處理是系統的「大腦」，將原始像素資料轉化為有意義的特徵資訊。從基本的前處理到進階的深度學習，依檢測需求組合不同的演算法流程。</p>
+  <p class="pnote">❓ 為何需要了解流程？——每個處理步驟都會影響最終結果，理解流程才能在誤判率高時找到問題出在哪個環節並進行調整。</p>
+  <div class="pipeline">
+    <div class="ps"><div class="psn">STEP 01</div><div class="pst">影像前處理</div><div class="psb">灰階轉換、雜訊去除（高斯模糊、中值濾波）、對比增強（直方圖均化），提升影像品質。</div></div>
+    <div class="ps"><div class="psn">STEP 02</div><div class="pst">特徵擷取</div><div class="psb">邊緣偵測（Canny、Sobel）、輪廓提取、Blob 分析，找出影像中的幾何特徵。</div></div>
+    <div class="ps"><div class="psn">STEP 03</div><div class="pst">二值化分割</div><div class="psb">閾值分割（Otsu、自適應閾值）將目標區域從背景中分離，是後續量測的基礎。</div></div>
+    <div class="ps"><div class="psn">STEP 04</div><div class="pst">模式識別</div><div class="psb">傳統機器學習（SVM、隨機森林）或深度學習（CNN、YOLO）分類瑕疵類型。</div></div>
+    <div class="ps"><div class="psn">STEP 05</div><div class="pst">判定輸出</div><div class="psb">依設定的公差標準給出 OK / NG 結果，並將座標、尺寸、缺陷類別回傳給 PLC 或 MES。</div></div>
+  </div>
+</div>
+</div>
+
+<!-- ════ 03 檢測應用 ════ -->
+<div class="page" id="pa">
+<div class="pi">
+  <div class="ptag">// 03 · DETECTION APPLICATIONS</div>
+  <h2 class="ptitle">檢測應用</h2>
+  <div class="divider"></div>
+  <p class="pdesc">機器視覺已廣泛應用於各產業的自動化生產線，以下列舉四大主要應用類型，每種應用對相機、演算法的需求各不相同。</p>
+  <p class="pnote">❓ 為何要分類？——了解不同應用場景的需求差異，才能為專案選擇最合適的硬體規格與演算法組合，避免過度投資或規格不足。</p>
+  <div class="agrid">
+    <div class="ac"><div class="ach h1">🔍 外觀瑕疵檢測</div><div class="acb">檢測產品表面的刮痕、裂縫、汙漬、凹凸等缺陷。廣泛應用於 PCB 電路板、金屬零件、玻璃面板、塑膠外殼等產品的出廠品管。<div class="tags"><span class="tag">表面缺陷</span><span class="tag">AOI</span><span class="tag">PCB 檢測</span></div></div></div>
+    <div class="ac"><div class="ach h2">📏 尺寸量測</div><div class="acb">利用影像中的像素距離換算實際尺寸，進行非接觸式精密量測。可量測孔徑、間距、平行度等幾何參數，精度可達微米等級。<div class="tags"><span class="tag">非接觸量測</span><span class="tag">幾何量測</span><span class="tag">μm 精度</span></div></div></div>
+    <div class="ac"><div class="ach h3">🔤 條碼 / OCR 辨識</div><div class="acb">讀取產品上的一維條碼、QR Code、Data Matrix 或印刷文字，進行追蹤溯源、防錯漏裝，確保正確產品流入正確工序。<div class="tags"><span class="tag">QR Code</span><span class="tag">追蹤溯源</span><span class="tag">防錯裝</span></div></div></div>
+    <div class="ac"><div class="ach h4">🤖 定位引導</div><div class="acb">提供機器手臂精確的抓取座標，補償工件擺放誤差。結合視覺定位與機器人運動控制，實現高精度的撿料、組裝與貼合作業。<div class="tags"><span class="tag">機器手臂</span><span class="tag">視覺引導</span><span class="tag">Pick & Place</span></div></div></div>
+  </div>
+</div>
+</div>
+
+<!-- ════ 04 專題報告 ════ -->
+<div class="page" id="pr">
+<div class="pi">
+  <div class="ptag">// 04 · PROJECT REPORT</div>
+  <h2 class="ptitle">專題報告</h2>
+  <div class="divider"></div>
+  <p class="pdesc">本專題報告整合上述各模組的理論與實作成果，完整呈現從系統規劃、硬體選型、軟體開發到實驗驗證的全流程。</p>
+  <p class="pnote">❓ 為何要寫報告？——報告不只是作業，它是將學到的知識系統化整理的過程。未來在業界提案或評估新系統時，這套思考框架將會非常實用。</p>
+  <div class="rl">
+    <div class="rcl">
+      <div class="ri"><div class="ricon">📌</div><div><div class="rit">研究動機與目標</div><div class="rid">說明為何選擇此主題，預計解決什麼問題，以及系統的設計規格目標（如：檢測速度、精度需求）。</div></div></div>
+      <div class="ri"><div class="ricon">🔧</div><div><div class="rit">系統架構設計</div><div class="rid">以方塊圖說明硬體組成（相機、鏡頭、光源、PC）與軟體流程圖，以及各元件間的資料流向。</div></div></div>
+      <div class="ri"><div class="ricon">🧪</div><div><div class="rit">實驗結果與數據</div><div class="rid">呈現實際檢測的準確率（Accuracy）、召回率（Recall）、誤判率，並與傳統人工目視比較。</div></div></div>
+      <div class="ri"><div class="ricon">💡</div><div><div class="rit">結論與未來展望</div><div class="rid">總結本專題的貢獻與不足，提出改進方向（如：導入深度學習、擴充至 3D 視覺等）。</div></div></div>
+    </div>
+    <div class="rf">
+      <h3>📋 報告格式建議</h3>
+      <div class="fr"><span class="frl">頁數</span><span class="frv">20 – 40 頁</span></div>
+      <div class="fr"><span class="frl">字型</span><span class="frv">標楷體 / 新細明 12pt</span></div>
+      <div class="fr"><span class="frl">章節數</span><span class="frv">5 – 7 章</span></div>
+      <div class="fr"><span class="frl">圖表要求</span><span class="frv">每張圖需標號與說明</span></div>
+      <div class="fr"><span class="frl">參考文獻</span><span class="frv">至少 10 筆，APA 格式</span></div>
+      <div class="fr"><span class="frl">附件</span><span class="frv">程式碼、原始影像資料集</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div><!-- track -->
+</main>
+
+<div class="p-nav">
+  <button class="p-btn" id="pb" onclick="goTo(cur-1)" disabled>←</button>
+  <button class="p-btn" id="pf2" onclick="goTo(cur+1)">→</button>
+</div>
+
+<script>
+const N=5;let cur=0;
+function goTo(i){
+  if(i<0||i>=N)return;
+  cur=i;
+  document.getElementById('track').style.transform=`translateX(-${i*20}%)`;
+  document.querySelectorAll('.nav-link').forEach((el,j)=>el.classList.toggle('active',j===i));
+  document.getElementById('pf').style.width=((i+1)/N*100)+'%';
+  document.getElementById('pb').disabled=i===0;
+  document.getElementById('pf2').disabled=i===N-1;
+  document.querySelectorAll('.page')[i].scrollTop=0;
+}
+function swTab(e,id){
+  document.querySelectorAll('.mpanel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('p-'+id).classList.add('active');
+  e.currentTarget.classList.add('active');
+}
+function tog(tr){
+  const c=tr.closest('.ecard'),open=c.classList.contains('open');
+  tr.closest('.elist').querySelectorAll('.ecard').forEach(x=>x.classList.remove('open'));
+  if(!open)c.classList.add('open');
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')goTo(cur+1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')goTo(cur-1);
+});
+</script>
+</body>
+</html>
