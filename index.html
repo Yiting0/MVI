@@ -904,6 +904,7 @@ canvas#apCanvas{border-radius:50%}
     <button class="pp-tab" onclick="swPP(event,'pp-frequency')">📡 頻率濾波</button>
     <button class="pp-tab" onclick="swPP(event,'pp-segmentation')">✂️ 影像分割</button>
     <button class="pp-tab" onclick="swPP(event,'pp-morphology')">🔷 形態學</button>
+    <button class="pp-tab" onclick="swPP(event,'pp-features')">🔍 影像特徵</button>
   </div>
 
   <!-- ── 強度轉換 ── -->
@@ -1849,6 +1850,309 @@ canvas#apCanvas{border-radius:50%}
     <div><div class="dyk-label">// 形態學的工業應用</div><div class="dyk-text">IC 板打線檢測用<strong>侵蝕</strong>去除細小焊錫雜點；指紋辨識用<strong>閉合</strong>修補破損紋路；OCR 文字識別前用<strong>細線化</strong>取得字形骨架；瑕疵偵測用<strong>輪廓萃取</strong>找出物件邊界。</div></div>
   </div>
 </div>
+
+<!-- ── 影像特徵 ── -->
+<div class="pp-section" id="pp-features">
+  <div class="sec-header">
+    <span class="sec-num">STEP 06</span>
+    <span class="sec-title">影像特徵表示與描述</span>
+  </div>
+  <p style="font-size:.97rem;line-height:1.82;color:var(--dim);margin-bottom:1.2rem">影像處理完成後，下一步是從影像中<strong style="color:var(--text)">抽取有意義的資訊</strong>。「表示（Representation）」決定如何儲存物件，「描述（Description）」則用數值捕捉其可辨識的特性。</p>
+ 
+  <!-- 表示 vs 描述 互動卡片 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+    <div style="background:var(--bg-light);border:1px solid rgba(79,195,247,.35);border-radius:8px;padding:1.3rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent);margin-bottom:.6rem">// 表示（Representation）</div>
+      <div style="font-size:1rem;font-weight:700;margin-bottom:.5rem">如何儲存物件？</div>
+      <p style="font-size:.88rem;line-height:1.75;color:var(--dim);margin-bottom:.8rem">用<strong style="color:var(--text)">簡單的形式或符號</strong>代表影像物件，讓後續分析更有效率。重點在降低資料量、保留結構關係。</p>
+      <div style="background:var(--bg);border-radius:5px;padding:.7rem .9rem;font-size:.82rem;line-height:1.8;color:var(--dim)">
+        例：輪廓鏈碼、骨架線、多邊形頂點串列
+      </div>
+    </div>
+    <div style="background:var(--bg-light);border:1px solid rgba(0,229,204,.35);border-radius:8px;padding:1.3rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.6rem">// 描述（Description）</div>
+      <div style="font-size:1rem;font-weight:700;margin-bottom:.5rem">如何辨識物件？</div>
+      <p style="font-size:.88rem;line-height:1.75;color:var(--dim);margin-bottom:.8rem">從表示中提取<strong style="color:var(--text)">可量化的數值特徵</strong>，用於比對、分類、辨識。數值應具備不變性（對縮放、旋轉、位移穩定）。</p>
+      <div style="background:var(--bg);border-radius:5px;padding:.7rem .9rem;font-size:.82rem;line-height:1.8;color:var(--dim)">
+        例：輪廓長度、形狀數值、統計力矩、紋理熵
+      </div>
+    </div>
+  </div>
+ 
+  <!-- 特徵分類導覽 Tabs -->
+  <div class="sec-header">
+    <span class="sec-num">CATEGORIES</span>
+    <span class="sec-title">特徵的四大類別</span>
+  </div>
+  <div class="filter-widget" style="margin-bottom:1.5rem">
+    <div class="aw-title">// 點選類別，看各類特徵的說明與用途</div>
+    <div class="filter-btns" id="featCatBtns">
+      <button class="f-btn active" data-feat-cat="boundary" onclick="setFeatCat('boundary')">🔵 外形表示</button>
+      <button class="f-btn" data-feat-cat="chain" onclick="setFeatCat('chain')">🔗 鏈碼</button>
+      <button class="f-btn" data-feat-cat="region" onclick="setFeatCat('region')">🟩 區域描述</button>
+      <button class="f-btn" data-feat-cat="texture" onclick="setFeatCat('texture')">🟣 紋理描述</button>
+    </div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;margin-top:.5rem">
+      <canvas id="featCatCanvas" width="180" height="180" style="border-radius:8px;border:1px solid var(--border);background:#0d1117;flex-shrink:0"></canvas>
+      <div style="flex:1;min-width:200px">
+        <div id="featCatTitle" style="font-size:1.05rem;font-weight:700;color:var(--accent);margin-bottom:.5rem"></div>
+        <div id="featCatDesc" style="font-size:.9rem;line-height:1.82;color:var(--dim);margin-bottom:.8rem"></div>
+        <div id="featCatItems" style="display:flex;flex-direction:column;gap:.4rem"></div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- 鏈碼互動 -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">DETAIL</span>
+    <span class="sec-title">鏈碼（Chain Code）互動演示</span>
+  </div>
+  <p style="font-size:.9rem;line-height:1.78;color:var(--dim);margin-bottom:1rem">鏈碼用一系列<strong style="color:var(--text)">方向數字</strong>來記錄輪廓路徑，每個數字代表從目前像素走到下一個像素的方向。4方向碼用 0-3，8方向碼用 0-7。</p>
+ 
+  <div class="filter-widget">
+    <div class="aw-title">// 點擊格子繪製輪廓，觀察自動產生的鏈碼</div>
+    <div style="display:flex;gap:.6rem;margin-bottom:.8rem">
+      <button class="f-btn active" data-chain-mode="4" onclick="setChainMode(4)">4方向鏈碼</button>
+      <button class="f-btn" data-chain-mode="8" onclick="setChainMode(8)">8方向鏈碼</button>
+      <button class="f-btn" onclick="resetChain()" style="margin-left:.5rem;border-color:rgba(248,113,113,.4);color:#f87171">清除</button>
+    </div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
+      <div>
+        <canvas id="chainCanvas" width="200" height="200"
+          style="border-radius:6px;border:1px solid var(--border);cursor:crosshair;background:#0d1117"
+          onclick="chainClick(event)"
+          onmousemove="chainHover(event)"></canvas>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);margin-top:.4rem;text-align:center">點擊格子繪製輪廓路徑</div>
+      </div>
+      <!-- 方向示意圖 -->
+      <div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--accent2);letter-spacing:.1em;margin-bottom:.6rem">// 方向定義</div>
+        <canvas id="dirCanvas" width="130" height="130" style="border-radius:6px;border:1px solid var(--border);background:#0d1117"></canvas>
+        <div style="margin-top:.8rem;background:var(--bg);border-radius:5px;padding:.7rem .9rem;min-width:130px">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--accent2);margin-bottom:.4rem">// 目前鏈碼</div>
+          <div id="chainCodeDisplay" style="font-family:'Share Tech Mono',monospace;font-size:.9rem;color:var(--text);word-break:break-all;min-height:24px">—</div>
+          <div style="margin-top:.5rem;font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim)">長度：<span id="chainLenDisplay" style="color:var(--accent)">0</span> 步</div>
+        </div>
+      </div>
+      <div class="filter-info-panel">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--accent2);margin-bottom:.6rem">// 鏈碼不變性</div>
+        <div style="display:flex;flex-direction:column;gap:.5rem">
+          <div style="background:var(--bg-light);border-radius:5px;padding:.7rem .9rem;border-left:2px solid var(--accent2)">
+            <div style="font-size:.8rem;font-weight:700;color:var(--text);margin-bottom:.2rem">起始點無關</div>
+            <div style="font-size:.82rem;color:var(--dim);line-height:1.6">取碼中最小整數作為起點，使描述不受起始位置影響。</div>
+          </div>
+          <div style="background:var(--bg-light);border-radius:5px;padding:.7rem .9rem;border-left:2px solid var(--accent)">
+            <div style="font-size:.8rem;font-weight:700;color:var(--text);margin-bottom:.2rem">大小無關</div>
+            <div style="font-size:.82rem;color:var(--dim);line-height:1.6">縮放物件後重新取樣，使鏈碼長度相同，消除尺度差異。</div>
+          </div>
+          <div style="background:var(--bg-light);border-radius:5px;padding:.7rem .9rem;border-left:2px solid #a78bfa">
+            <div style="font-size:.8rem;font-weight:700;color:var(--text);margin-bottom:.2rem">方向無關</div>
+            <div style="font-size:.82rem;color:var(--dim);line-height:1.6">使用<strong style="color:var(--text)">差分碼</strong>（相鄰方向的變化量），旋轉後差分碼不變。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- 邊界描述 -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">BOUNDARY</span>
+    <span class="sec-title">邊界描述（Boundary Description）</span>
+  </div>
+  <p style="font-size:.9rem;line-height:1.78;color:var(--dim);margin-bottom:1.2rem">以<strong style="color:var(--text)">數值方式</strong>將物件的外形輪廓加以描述，用於後續的物件比對與辨識。常見描述方法各有優缺點，適用不同場景。</p>
+ 
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.85rem;margin-bottom:1.5rem">
+    <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.1rem">
+      <div style="font-size:.85rem;font-weight:700;color:var(--accent);margin-bottom:.3rem">📏 輪廓長度</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--accent2);margin-bottom:.4rem">像素計數</div>
+      <div style="font-size:.85rem;line-height:1.7;color:var(--dim)">計算輪廓上的像素數量，最簡單的描述。4向連通相鄰算 1，對角線相鄰算 √2。</div>
+    </div>
+    <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.1rem">
+      <div style="font-size:.85rem;font-weight:700;color:var(--accent);margin-bottom:.3rem">📐 最長軸與最短軸</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--accent2);margin-bottom:.4rem">長軸 / 短軸</div>
+      <div style="font-size:.85rem;line-height:1.7;color:var(--dim)">最長軸：兩端點間的最長距離，以紅線表示物件主方向。最短軸：垂直主軸的最大寬度。</div>
+    </div>
+    <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.1rem">
+      <div style="font-size:.85rem;font-weight:700;color:var(--accent);margin-bottom:.3rem">〰️ 曲率</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--accent2);margin-bottom:.4rem">斜率變化</div>
+      <div style="font-size:.85rem;line-height:1.7;color:var(--dim)">鄰近兩點邊界斜率的差值，高曲率點對應輪廓的角落與突出。對雜訊敏感。</div>
+    </div>
+    <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.1rem">
+      <div style="font-size:.85rem;font-weight:700;color:var(--accent);margin-bottom:.3rem">🔢 形狀數值</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--accent2);margin-bottom:.4rem">Shape Number</div>
+      <div style="font-size:.85rem;line-height:1.7;color:var(--dim)">取鏈碼中差分碼最小整數排列，長度最短者即為形狀數值，不受起始點影響。</div>
+    </div>
+  </div>
+ 
+  <!-- 統計力矩互動 -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">MOMENTS</span>
+    <span class="sec-title">統計力矩（Statistical Moments）</span>
+  </div>
+  <p style="font-size:.9rem;line-height:1.78;color:var(--dim);margin-bottom:1rem">「力矩」是資料的統計量。把物件輪廓轉成一維函數（沿輪廓的距離），再計算其統計力矩，用於描述輪廓形狀。</p>
+ 
+  <div class="filter-widget">
+    <div class="aw-title">// 互動：切換形狀，觀察各階力矩數值</div>
+    <div class="filter-btns" id="momentBtns">
+      <button class="f-btn active" data-moment-shape="circle" onclick="setMomentShape('circle')">⭕ 圓形</button>
+      <button class="f-btn" data-moment-shape="ellipse" onclick="setMomentShape('ellipse')">🥚 橢圓</button>
+      <button class="f-btn" data-moment-shape="rect" onclick="setMomentShape('rect')">🟦 矩形</button>
+      <button class="f-btn" data-moment-shape="triangle" onclick="setMomentShape('triangle')">🔺 三角形</button>
+      <button class="f-btn" data-moment-shape="star" onclick="setMomentShape('star')">⭐ 星形</button>
+    </div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;margin-top:.5rem">
+      <canvas id="momentCanvas" width="160" height="160" style="border-radius:6px;border:1px solid var(--border);background:#0d1117;flex-shrink:0"></canvas>
+      <div style="flex:1;min-width:200px">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--accent2);letter-spacing:.12em;margin-bottom:.7rem">// 統計力矩數值</div>
+        <div id="momentTable" style="display:flex;flex-direction:column;gap:.4rem"></div>
+      </div>
+      <div style="min-width:180px">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--accent2);letter-spacing:.12em;margin-bottom:.7rem">// 各階力矩的意義</div>
+        <div style="display:flex;flex-direction:column;gap:.4rem">
+          <div style="background:var(--bg-light);border-radius:4px;padding:.55rem .8rem;border-left:2px solid var(--accent)">
+            <div style="font-size:.8rem;font-weight:700;color:var(--text)">0階力矩（面積）</div>
+            <div style="font-size:.78rem;color:var(--dim);margin-top:.15rem">資料點數量，即輪廓圍住的面積</div>
+          </div>
+          <div style="background:var(--bg-light);border-radius:4px;padding:.55rem .8rem;border-left:2px solid var(--accent2)">
+            <div style="font-size:.8rem;font-weight:700;color:var(--text)">1階力矩（平均值）</div>
+            <div style="font-size:.78rem;color:var(--dim);margin-top:.15rem">資料重心，即物件中心點位置</div>
+          </div>
+          <div style="background:var(--bg-light);border-radius:4px;padding:.55rem .8rem;border-left:2px solid #a78bfa">
+            <div style="font-size:.8rem;font-weight:700;color:var(--text)">2階力矩（變異數）</div>
+            <div style="font-size:.78rem;color:var(--dim);margin-top:.15rem">資料點圍繞均值的分散程度</div>
+          </div>
+          <div style="background:var(--bg-light);border-radius:4px;padding:.55rem .8rem;border-left:2px solid #fbbf24">
+            <div style="font-size:.8rem;font-weight:700;color:var(--text)">3階力矩（偏斜度）</div>
+            <div style="font-size:.78rem;color:var(--dim);margin-top:.15rem">分布的不對稱程度，描述資料分布傾向</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- 區域描述 -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">REGION</span>
+    <span class="sec-title">區域描述（Region Description）</span>
+  </div>
+  <p style="font-size:.9rem;line-height:1.78;color:var(--dim);margin-bottom:1.2rem">區域描述利用描述封閉輪廓<strong style="color:var(--text)">內部屬性</strong>的特徵量，通常比外形描述（邊界）攜帶更多資訊，適合形狀複雜或內部紋理重要的物件。</p>
+ 
+  <table class="cmp-table" style="margin-bottom:1.2rem">
+    <thead><tr><th>描述項目</th><th>定義</th><th>備註</th></tr></thead>
+    <tbody>
+      <tr><td><strong>面積</strong></td><td>封閉輪廓內像素數量</td><td>基本區域大小描述</td></tr>
+      <tr><td><strong>周長</strong></td><td>輪廓的像素點數量</td><td>輪廓邊界長度</td></tr>
+      <tr><td><strong>緊湊性（Compactness）</strong></td><td style="font-family:'Share Tech Mono',monospace;font-size:.82rem">周長² / (4π × 面積)</td><td>圓形緊湊性最小（=1），形狀越不規則越大</td></tr>
+      <tr><td><strong>主軸方向</strong></td><td>物質分布最廣的方向</td><td>描述物體的方向</td></tr>
+      <tr><td><strong>灰階特性</strong></td><td>平均值、中位數、最大/小值、變異量</td><td>描述區域內像素灰階分布</td></tr>
+    </tbody>
+  </table>
+ 
+  <!-- 緊湊性互動 Demo -->
+  <div class="filter-widget">
+    <div class="aw-title">// 互動：計算各形狀的緊湊性，比較差異</div>
+    <div class="filter-btns" id="compactBtns">
+      <button class="f-btn active" data-compact="circle" onclick="setCompact('circle')">⭕ 圓形</button>
+      <button class="f-btn" data-compact="square" onclick="setCompact('square')">🟦 正方形</button>
+      <button class="f-btn" data-compact="rect_thin" onclick="setCompact('rect_thin')">▬ 細長矩形</button>
+      <button class="f-btn" data-compact="star" onclick="setCompact('star')">⭐ 星形</button>
+      <button class="f-btn" data-compact="cross" onclick="setCompact('cross')">✚ 十字形</button>
+    </div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;margin-top:.5rem">
+      <canvas id="compactCanvas" width="150" height="150" style="border-radius:6px;border:1px solid var(--border);background:#0d1117;flex-shrink:0"></canvas>
+      <div style="flex:1;min-width:180px">
+        <div id="compactResult" style="font-size:.9rem;line-height:1.82;color:var(--dim)"></div>
+        <!-- Bar visualization -->
+        <div style="margin-top:.8rem">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--accent2);margin-bottom:.5rem">// 緊湊性對比（C = P² / 4πA）</div>
+          <div id="compactBars" style="display:flex;flex-direction:column;gap:.35rem"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- 紋理描述 -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">TEXTURE</span>
+    <span class="sec-title">紋理描述（Texture Description）</span>
+  </div>
+  <p style="font-size:.9rem;line-height:1.78;color:var(--dim);margin-bottom:1.2rem">紋理描述分析物件內部灰階的<strong style="color:var(--text)">空間分布特性</strong>，反映出材質的粗糙度、規律性或複雜程度，分為數學式紋理（用方程式定義）和隨機紋理（統計方法描述）。</p>
+ 
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+    <div style="background:var(--bg-light);border:1px solid rgba(167,139,250,.3);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:#a78bfa;margin-bottom:.6rem">// 數學式紋理</div>
+      <p style="font-size:.87rem;line-height:1.75;color:var(--dim);margin-bottom:.7rem">用明確的數學函數定義，可精確重現的規律性紋理。</p>
+      <div style="font-size:.82rem;line-height:1.8;color:var(--dim)">• 週期性花紋（布料、晶格結構）<br>• 可由固定數學式表示<br>• 特徵明確，分析直觀</div>
+    </div>
+    <div style="background:var(--bg-light);border:1px solid rgba(0,229,204,.3);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.6rem">// 隨機紋理</div>
+      <p style="font-size:.87rem;line-height:1.75;color:var(--dim);margin-bottom:.7rem">無法用固定數學式表示，需以<strong style="color:var(--text)">統計量</strong>描述其特性。</p>
+      <div style="font-size:.82rem;line-height:1.8;color:var(--dim)">• 自然材質（木材、石頭、皮膚）<br>• 多影像實例推估統計特性<br>• 以平均值/標準差/熵等描述</div>
+    </div>
+  </div>
+ 
+  <!-- 紋理統計量互動 -->
+  <div class="filter-widget">
+    <div class="aw-title">// 互動：切換紋理，觀察統計描述量的差異</div>
+    <div class="filter-btns" id="textureBtns">
+      <button class="f-btn active" data-texture="smooth" onclick="setTexture('smooth')">平滑紋理</button>
+      <button class="f-btn" data-texture="coarse" onclick="setTexture('coarse')">粗糙紋理</button>
+      <button class="f-btn" data-texture="periodic" onclick="setTexture('periodic')">週期紋理</button>
+      <button class="f-btn" data-texture="random" onclick="setTexture('random')">隨機雜訊</button>
+    </div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;margin-top:.5rem">
+      <div class="canvas-wrap">
+        <canvas id="textureCanvas" width="150" height="150" style="border-radius:6px;border:1px solid var(--border)"></canvas>
+        <div class="canvas-label">紋理影像</div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--accent2);letter-spacing:.12em;margin-bottom:.7rem">// 統計描述量</div>
+        <div id="textureStats" style="display:flex;flex-direction:column;gap:.5rem"></div>
+      </div>
+      <div style="min-width:160px">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--accent2);letter-spacing:.12em;margin-bottom:.7rem">// 統計量說明</div>
+        <div style="display:flex;flex-direction:column;gap:.4rem;font-size:.82rem;line-height:1.7;color:var(--dim)">
+          <div><strong style="color:var(--text)">平滑度 R</strong>：r = 1 − 1/(1+μ₂)，μ₂為變異量</div>
+          <div><strong style="color:var(--text)">一致性 U</strong>：Σpᵢ²，所有灰階出現機率的平方和</div>
+          <div><strong style="color:var(--text)">平均亂度 e</strong>：e = −Σpᵢlog₂pᵢ，越均勻熵越高</div>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- 不變性總結 -->
+  <div class="dyk" style="margin-top:1.5rem">
+    <div class="dyk-icon">🏆</div>
+    <div>
+      <div class="dyk-label">// 特徵描述的核心原則——不變性（Invariant）</div>
+      <div class="dyk-text">好的特徵描述子必須對<strong>平移、旋轉、縮放</strong>保持穩定——同一個物件無論在哪裡、多大、朝哪個方向，描述數值應該相近或相同。鏈碼的差分碼解決方向不變；統計力矩的歸一化解決大小不變；Hu不變矩可同時達成三種不變性。</div>
+    </div>
+  </div>
+ 
+  <!-- 比較表 -->
+  <div class="sec-header" style="margin-top:1.5rem">
+    <span class="sec-num">COMPARE</span>
+    <span class="sec-title">特徵描述方法比較</span>
+  </div>
+  <table class="cmp-table">
+    <thead><tr><th>方法</th><th>類型</th><th>不變性</th><th>計算複雜度</th><th>適用場景</th></tr></thead>
+    <tbody>
+      <tr><td><strong>鏈碼</strong></td><td>邊界表示</td><td class="warn">差分碼→方向✓</td><td class="good">低</td><td>輪廓追蹤、簡單形狀</td></tr>
+      <tr><td><strong>多邊形近似</strong></td><td>邊界表示</td><td class="warn">部分</td><td class="good">低-中</td><td>多邊形物件、工業零件</td></tr>
+      <tr><td><strong>統計力矩</strong></td><td>邊界描述</td><td class="warn">歸一化後✓</td><td class="warn">中</td><td>輪廓形狀比對</td></tr>
+      <tr><td><strong>緊湊性</strong></td><td>區域描述</td><td class="good">平移旋轉✓</td><td class="good">低</td><td>形狀圓度評估</td></tr>
+      <tr><td><strong>灰階統計</strong></td><td>區域描述</td><td class="good">旋轉✓</td><td class="good">低</td><td>亮度/對比分析</td></tr>
+      <tr><td><strong>紋理描述</strong></td><td>區域描述</td><td class="warn">依方法而異</td><td class="warn">中-高</td><td>材質辨識、表面檢測</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
 </div>
 </div>
 
@@ -2998,6 +3302,485 @@ function setMorph2(type){
   }
   putGray(outC,result);
 }
+
+// ══════════════════════════════
+// 影像特徵 SECTION JS
+// ══════════════════════════════
+ 
+// ── 特徵類別互動 ──
+const featCatData = {
+  boundary: {
+    title: '外形表示（Boundary Representation）',
+    desc: '利用物件的邊界形狀狀態表示物件。外形表示關注輪廓本身的幾何特性，適合形狀辨識與比對。通常比區域描述計算更快，對輪廓清晰的物件效果最好。',
+    items: [
+      {label:'鏈碼（Chain Code）', note:'以方向序列記錄輪廓路徑'},
+      {label:'多邊形近似', note:'用折線連接取樣點，簡化輪廓'},
+      {label:'骨架（Skeleton）', note:'細化為單像素寬的骨架線'},
+    ],
+    drawFn: (ctx,w,h) => {
+      ctx.clearRect(0,0,w,h);
+      ctx.strokeStyle='#4fc3f7';ctx.lineWidth=2;
+      ctx.beginPath();
+      const r=65,cx=w/2,cy=h/2;
+      for(let i=0;i<=360;i+=2){
+        const a=i*Math.PI/180;
+        const rr=r+12*Math.sin(6*a)+6*Math.cos(4*a);
+        const x=cx+rr*Math.cos(a),y=cy+rr*Math.sin(a);
+        i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.closePath();ctx.stroke();
+      // dots on boundary
+      for(let i=0;i<360;i+=24){
+        const a=i*Math.PI/180;
+        const rr=r+12*Math.sin(6*a)+6*Math.cos(4*a);
+        ctx.beginPath();ctx.arc(cx+rr*Math.cos(a),cy+rr*Math.sin(a),3,0,Math.PI*2);
+        ctx.fillStyle='#00e5cc';ctx.fill();
+      }
+    }
+  },
+  chain: {
+    title: '鏈碼（Chain Code）',
+    desc: '沿輪廓路徑，以一串方向數字記錄每一步移動方向，構成完整描述。4方向鏈碼用東西南北，8方向鏈碼加入四個對角方向，使描述更精確。',
+    items: [
+      {label:'4方向碼 0-3', note:'東0 北1 西2 南3'},
+      {label:'8方向碼 0-7', note:'東0 右上1 北2 … 右下7'},
+      {label:'差分碼', note:'相鄰方向數字差，消除旋轉影響'},
+    ],
+    drawFn: (ctx,w,h) => {
+      ctx.clearRect(0,0,w,h);
+      const grid=20, cols=8, rows=8;
+      const ox=(w-cols*grid)/2, oy=(h-rows*grid)/2;
+      ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=1;
+      for(let i=0;i<=cols;i++){ctx.beginPath();ctx.moveTo(ox+i*grid,oy);ctx.lineTo(ox+i*grid,oy+rows*grid);ctx.stroke();}
+      for(let j=0;j<=rows;j++){ctx.beginPath();ctx.moveTo(ox,oy+j*grid);ctx.lineTo(ox+cols*grid,oy+j*grid);ctx.stroke();}
+      const path=[[2,3],[3,3],[4,3],[5,3],[5,4],[5,5],[4,5],[3,5],[2,5],[2,4],[2,3]];
+      ctx.strokeStyle='#4fc3f7';ctx.lineWidth=2;ctx.beginPath();
+      path.forEach(([c,r],i)=>{
+        const x=ox+(c+.5)*grid,y=oy+(r+.5)*grid;
+        i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      });
+      ctx.stroke();
+      path.forEach(([c,r])=>{
+        ctx.beginPath();ctx.arc(ox+(c+.5)*grid,oy+(r+.5)*grid,4,0,Math.PI*2);
+        ctx.fillStyle='#00e5cc';ctx.fill();
+      });
+    }
+  },
+  region: {
+    title: '區域描述（Region Description）',
+    desc: '利用物件內部所有像素的屬性進行描述，涵蓋面積、形狀緊湊性、主軸方向、灰階統計等。區域描述攜帶比邊界更豐富的資訊，適合複雜形狀或需要內部特徵的場景。',
+    items: [
+      {label:'面積 / 周長', note:'最基本的大小與形狀描述'},
+      {label:'緊湊性 C = P²/4πA', note:'圓=1，形狀越複雜C越大'},
+      {label:'主軸方向', note:'物質分布最廣的方向角'},
+    ],
+    drawFn: (ctx,w,h) => {
+      ctx.clearRect(0,0,w,h);
+      ctx.fillStyle='rgba(79,195,247,.15)';ctx.strokeStyle='#4fc3f7';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.arc(w/2,h/2,60,0,Math.PI*2);ctx.fill();ctx.stroke();
+      const a=Math.PI/5,len=75;
+      ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(w/2-len*Math.cos(a),h/2-len*Math.sin(a));
+      ctx.lineTo(w/2+len*Math.cos(a),h/2+len*Math.sin(a));
+      ctx.stroke();
+      ctx.fillStyle='#f87171';ctx.beginPath();ctx.arc(w/2,h/2,5,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(251,191,36,.7)';ctx.font='10px Share Tech Mono,monospace';
+      ctx.fillText('主軸',w/2+45,h/2-35);
+    }
+  },
+  texture: {
+    title: '紋理描述（Texture Description）',
+    desc: '分析區域內部灰階的空間分布特性，反映材質的粗糙度、規律性或複雜程度。分為數學式紋理（規律可定義）與隨機紋理（以統計量描述）。常用指標：平滑度R、一致性U、平均亂度（熵）。',
+    items: [
+      {label:'平滑度 R', note:'r=1−1/(1+μ₂)，反映變異程度'},
+      {label:'一致性 U', note:'Σpᵢ²，灰階分布集中程度'},
+      {label:'平均亂度 e', note:'−Σpᵢlog₂pᵢ，分布越均勻熵越高'},
+    ],
+    drawFn: (ctx,w,h) => {
+      ctx.clearRect(0,0,w,h);
+      for(let y=0;y<h;y+=4){
+        for(let x=0;x<w;x+=4){
+          const v=Math.floor(120+70*Math.sin(x*0.3)*Math.cos(y*0.2)+30*Math.random());
+          ctx.fillStyle=`rgb(${v},${v},${v})`;
+          ctx.fillRect(x,y,4,4);
+        }
+      }
+      ctx.strokeStyle='rgba(0,229,204,.4)';ctx.lineWidth=1.5;
+      ctx.strokeRect(15,15,w-30,h-30);
+    }
+  },
+};
+ 
+function setFeatCat(type) {
+  document.querySelectorAll('[data-feat-cat]').forEach(b =>
+    b.classList.toggle('active', b.getAttribute('data-feat-cat') === type)
+  );
+  const d = featCatData[type];
+  if (!d) return;
+  document.getElementById('featCatTitle').textContent = d.title;
+  document.getElementById('featCatDesc').textContent = d.desc;
+  document.getElementById('featCatItems').innerHTML = d.items.map(it =>
+    `<div style="background:var(--bg-light);border-radius:4px;padding:.55rem .9rem;border-left:2px solid var(--accent2);display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+      <span style="font-size:.88rem;font-weight:700;color:var(--text)">${it.label}</span>
+      <span style="font-size:.78rem;color:var(--dim);font-family:'Share Tech Mono',monospace">${it.note}</span>
+    </div>`
+  ).join('');
+  const cv = document.getElementById('featCatCanvas');
+  if (cv) d.drawFn(cv.getContext('2d'), cv.width, cv.height);
+}
+ 
+// ── 鏈碼互動 ──
+const CHAIN_COLS = 10, CHAIN_ROWS = 10, CHAIN_CELL = 20;
+let chainMode = 4;
+let chainPath = [];
+let chainHoverCell = null;
+ 
+function setChainMode(m) {
+  chainMode = m;
+  document.querySelectorAll('[data-chain-mode]').forEach(b =>
+    b.classList.toggle('active', parseInt(b.getAttribute('data-chain-mode')) === m)
+  );
+  drawDirCanvas();
+  updateChainDisplay();
+  drawChainCanvas();
+}
+ 
+function resetChain() {
+  chainPath = [];
+  updateChainDisplay();
+  drawChainCanvas();
+}
+ 
+function chainClick(evt) {
+  const c = document.getElementById('chainCanvas');
+  const rect = c.getBoundingClientRect();
+  const col = Math.floor((evt.clientX - rect.left) / (rect.width / CHAIN_COLS));
+  const row = Math.floor((evt.clientY - rect.top) / (rect.height / CHAIN_ROWS));
+  if (col < 0 || col >= CHAIN_COLS || row < 0 || row >= CHAIN_ROWS) return;
+  if (chainPath.length > 0) {
+    const last = chainPath[chainPath.length - 1];
+    if (last[0] === col && last[1] === row) return; // same cell
+  }
+  chainPath.push([col, row]);
+  updateChainDisplay();
+  drawChainCanvas();
+}
+ 
+function chainHover(evt) {
+  const c = document.getElementById('chainCanvas');
+  const rect = c.getBoundingClientRect();
+  const col = Math.floor((evt.clientX - rect.left) / (rect.width / CHAIN_COLS));
+  const row = Math.floor((evt.clientY - rect.top) / (rect.height / CHAIN_ROWS));
+  chainHoverCell = [col, row];
+  drawChainCanvas();
+}
+ 
+function getChainDir(from, to) {
+  const dx = to[0] - from[0], dy = to[1] - from[1];
+  if (chainMode === 4) {
+    if (dx === 1 && dy === 0) return 0;
+    if (dx === 0 && dy === -1) return 1;
+    if (dx === -1 && dy === 0) return 2;
+    if (dx === 0 && dy === 1) return 3;
+  } else {
+    const dirs = [[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[-1,1],[0,1],[1,1]];
+    for (let i = 0; i < dirs.length; i++)
+      if (dirs[i][0] === dx && dirs[i][1] === dy) return i;
+  }
+  return null;
+}
+ 
+function updateChainDisplay() {
+  const codes = [];
+  for (let i = 1; i < chainPath.length; i++) {
+    const d = getChainDir(chainPath[i-1], chainPath[i]);
+    if (d !== null) codes.push(d);
+  }
+  document.getElementById('chainCodeDisplay').textContent = codes.length ? codes.join(' ') : '—';
+  document.getElementById('chainLenDisplay').textContent = codes.length;
+}
+ 
+function drawChainCanvas() {
+  const c = document.getElementById('chainCanvas');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const cw = c.width / CHAIN_COLS, ch = c.height / CHAIN_ROWS;
+  ctx.clearRect(0, 0, c.width, c.height);
+  // grid
+  ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 1;
+  for (let i = 0; i <= CHAIN_COLS; i++) { ctx.beginPath(); ctx.moveTo(i*cw, 0); ctx.lineTo(i*cw, c.height); ctx.stroke(); }
+  for (let j = 0; j <= CHAIN_ROWS; j++) { ctx.beginPath(); ctx.moveTo(0, j*ch); ctx.lineTo(c.width, j*ch); ctx.stroke(); }
+  // hover highlight
+  if (chainHoverCell) {
+    ctx.fillStyle = 'rgba(79,195,247,.1)';
+    ctx.fillRect(chainHoverCell[0]*cw, chainHoverCell[1]*ch, cw, ch);
+  }
+  // path
+  if (chainPath.length > 1) {
+    ctx.strokeStyle = '#4fc3f7'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    chainPath.forEach(([col, row], i) => {
+      const x = (col + .5) * cw, y = (row + .5) * ch;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    // direction labels
+    for (let i = 1; i < chainPath.length; i++) {
+      const d = getChainDir(chainPath[i-1], chainPath[i]);
+      if (d === null) continue;
+      const mx = ((chainPath[i-1][0] + chainPath[i][0]) / 2 + .5) * cw;
+      const my = ((chainPath[i-1][1] + chainPath[i][1]) / 2 + .5) * ch;
+      ctx.fillStyle = '#00e5cc';
+      ctx.font = 'bold 11px Share Tech Mono,monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(d, mx, my - 8);
+    }
+  }
+  // path points
+  chainPath.forEach(([col, row], i) => {
+    ctx.beginPath(); ctx.arc((col+.5)*cw, (row+.5)*ch, i === 0 ? 6 : 4, 0, Math.PI * 2);
+    ctx.fillStyle = i === 0 ? '#fbbf24' : (i === chainPath.length-1 ? '#f87171' : '#4fc3f7');
+    ctx.fill();
+  });
+}
+ 
+function drawDirCanvas() {
+  const c = document.getElementById('dirCanvas');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const cx = c.width / 2, cy = c.height / 2, r = 42;
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.fillStyle = '#0d1117'; ctx.fillRect(0, 0, c.width, c.height);
+  if (chainMode === 4) {
+    const dirs4 = [[1,0,'0'],[0,-1,'1'],[-1,0,'2'],[0,1,'3']];
+    dirs4.forEach(([dx,dy,label]) => {
+      ctx.strokeStyle = '#4fc3f7'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+dx*r,cy+dy*r); ctx.stroke();
+      ctx.fillStyle = '#00e5cc'; ctx.font = 'bold 13px Share Tech Mono,monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(label, cx+dx*(r+14), cy+dy*(r+14));
+    });
+  } else {
+    const dirs8 = [[1,0,'0'],[1,-1,'1'],[0,-1,'2'],[-1,-1,'3'],[-1,0,'4'],[-1,1,'5'],[0,1,'6'],[1,1,'7']];
+    dirs8.forEach(([dx,dy,label]) => {
+      const isDiag = dx !== 0 && dy !== 0;
+      ctx.strokeStyle = isDiag ? 'rgba(79,195,247,.5)' : '#4fc3f7'; ctx.lineWidth = isDiag ? 1.2 : 2;
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+dx*r,cy+dy*r); ctx.stroke();
+      ctx.fillStyle = isDiag ? 'rgba(0,229,204,.7)' : '#00e5cc';
+      ctx.font = `${isDiag?'11':'bold 13'}px Share Tech Mono,monospace`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(label, cx+dx*(r+13), cy+dy*(r+13));
+    });
+  }
+  ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2); ctx.fill();
+}
+ 
+// ── 統計力矩 ──
+function getShapePixels(type, w, h) {
+  const pixels = [];
+  const cx = w/2, cy = h/2;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let inside = false;
+      if (type === 'circle') { const dx=x-cx,dy=y-cy; inside=dx*dx+dy*dy<55*55; }
+      else if (type === 'ellipse') { const dx=(x-cx)/70,dy=(y-cy)/40; inside=dx*dx+dy*dy<1; }
+      else if (type === 'rect') { inside=x>cx-55&&x<cx+55&&y>cy-40&&y<cy+40; }
+      else if (type === 'triangle') { const dx=x-cx,dy=y-cy+30; inside=Math.abs(dx)<(50-dy*0.7)&&dy<50&&dy>-60; }
+      else if (type === 'star') {
+        const ang = Math.atan2(y-cy, x-cx);
+        const ro = Math.sqrt((x-cx)*(x-cx)+(y-cy)*(y-cy));
+        const r = 30 + 28*Math.abs(Math.sin(2.5*ang));
+        inside = ro < r;
+      }
+      if (inside) pixels.push([x, y]);
+    }
+  }
+  return pixels;
+}
+ 
+function computeMoments(pixels) {
+  if (!pixels.length) return {m0:0,cx:0,cy:0,m2:0,m3:0};
+  const m0 = pixels.length;
+  const cx = pixels.reduce((s,[x])=>s+x, 0) / m0;
+  const cy_v = pixels.reduce((s,[,y])=>s+y, 0) / m0;
+  // radial distances from centroid
+  const dists = pixels.map(([x,y]) => Math.sqrt((x-cx)**2+(y-cy_v)**2));
+  const mu = dists.reduce((s,d)=>s+d, 0) / m0;
+  const m2 = dists.reduce((s,d)=>s+(d-mu)**2, 0) / m0;
+  const m3 = dists.reduce((s,d)=>s+(d-mu)**3, 0) / m0 / Math.pow(m2+.001, 1.5);
+  return {m0, cx: cx.toFixed(1), cy: cy_v.toFixed(1), m2: m2.toFixed(1), m3: m3.toFixed(2)};
+}
+ 
+function drawMomentShape(ctx, type, w, h) {
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle = 'rgba(79,195,247,.18)'; ctx.strokeStyle = '#4fc3f7'; ctx.lineWidth = 1.5;
+  const cx=w/2, cy=h/2;
+  ctx.beginPath();
+  if (type==='circle') ctx.arc(cx,cy,55,0,Math.PI*2);
+  else if (type==='ellipse') { ctx.ellipse(cx,cy,70,40,0,0,Math.PI*2); }
+  else if (type==='rect') ctx.rect(cx-55,cy-40,110,80);
+  else if (type==='triangle') { ctx.moveTo(cx,cy-60);ctx.lineTo(cx+50,cy+30);ctx.lineTo(cx-50,cy+30);ctx.closePath(); }
+  else if (type==='star') {
+    for (let i=0;i<=10;i++) {
+      const ang=i*Math.PI/5-Math.PI/2, r=i%2===0?58:28;
+      const x=cx+r*Math.cos(ang),y=cy+r*Math.sin(ang);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+  }
+  ctx.fill(); ctx.stroke();
+  // centroid dot
+  const pix=getShapePixels(type,w,h);
+  if(pix.length){
+    const m=computeMoments(pix);
+    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(parseFloat(m.cx),parseFloat(m.cy),5,0,Math.PI*2);ctx.fill();
+  }
+}
+ 
+function setMomentShape(type) {
+  document.querySelectorAll('[data-moment-shape]').forEach(b =>
+    b.classList.toggle('active', b.getAttribute('data-moment-shape') === type)
+  );
+  const cv = document.getElementById('momentCanvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  drawMomentShape(ctx, type, cv.width, cv.height);
+  const pix = getShapePixels(type, cv.width, cv.height);
+  const m = computeMoments(pix);
+  const rows = [
+    {label:'0階力矩 m₀（面積）', val:m.m0+' px', color:'var(--accent)'},
+    {label:'重心 (x̄, ȳ)', val:`(${m.cx}, ${m.cy})`, color:'var(--accent2)'},
+    {label:'2階力矩 μ₂（變異數）', val:m.m2, color:'#a78bfa'},
+    {label:'3階力矩 μ₃（偏斜度）', val:m.m3, color:'#fbbf24'},
+  ];
+  document.getElementById('momentTable').innerHTML = rows.map(r =>
+    `<div style="background:var(--bg-light);border-radius:4px;padding:.6rem .9rem;display:flex;justify-content:space-between;align-items:center;border-left:2px solid ${r.color}">
+      <span style="font-size:.82rem;color:var(--dim)">${r.label}</span>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:.9rem;color:${r.color};font-weight:700">${r.val}</span>
+    </div>`
+  ).join('');
+}
+ 
+// ── 緊湊性互動 ──
+const compactShapes = {
+  circle: { name:'圓形', perimeter: r => 2*Math.PI*r, area: r => Math.PI*r*r, r:55 },
+  square: { name:'正方形', perimeter: r => 4*(r*1.8), area: r => (r*1.8)*(r*1.8), r:50 },
+  rect_thin: { name:'細長矩形', perimeter: r => 2*(r*2.2 + r*0.35), area: r => r*2.2*r*0.35, r:55 },
+  star: { name:'星形', perimeter: r => r*5.5, area: r => r*r*2.2, r:55 },
+  cross: { name:'十字形', perimeter: r => r*6.4, area: r => r*r*1.3, r:55 },
+};
+const compactAllResults = { circle:1.0, square:1.27, rect_thin:6.8, star:7.3, cross:9.1 };
+ 
+function drawCompactShape(ctx, type, w, h) {
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle='rgba(0,229,204,.15)';ctx.strokeStyle='#00e5cc';ctx.lineWidth=1.5;
+  const cx=w/2,cy=h/2;
+  ctx.beginPath();
+  if (type==='circle') { ctx.arc(cx,cy,55,0,Math.PI*2); }
+  else if (type==='square') { ctx.rect(cx-48,cy-48,96,96); }
+  else if (type==='rect_thin') { ctx.rect(cx-65,cy-18,130,36); }
+  else if (type==='star') {
+    for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,r=i%2===0?58:25;ctx.lineTo(cx+r*Math.cos(a),cy+r*Math.sin(a));}
+    ctx.closePath();
+  } else if (type==='cross') {
+    ctx.rect(cx-50,cy-18,100,36);
+    ctx.rect(cx-18,cy-50,36,100);
+  }
+  ctx.fill();ctx.stroke();
+}
+ 
+function setCompact(type) {
+  document.querySelectorAll('[data-compact]').forEach(b =>
+    b.classList.toggle('active', b.getAttribute('data-compact') === type)
+  );
+  const cv=document.getElementById('compactCanvas');
+  if(!cv)return;
+  drawCompactShape(cv.getContext('2d'),type,cv.width,cv.height);
+  const c=compactAllResults[type];
+  document.getElementById('compactResult').innerHTML=
+    `<div style="margin-bottom:.6rem"><span style="font-family:'Share Tech Mono',monospace;font-size:1.6rem;color:var(--accent2);font-weight:700">${c.toFixed(2)}</span></div>` +
+    `<div style="font-size:.88rem;line-height:1.78;color:var(--dim)">緊湊性 C = P² / (4πA)<br>` +
+    (c<=1.05?'圓形緊湊性最小，接近1，代表形狀最「緊湊」。':
+     c<=2?'正方形的C略大於1，仍然屬於緊湊形狀。':
+     c<=5?'細長或不規則形狀C明顯增大。':
+     '高度不規則的星形/十字形C值可達7-10，表示形狀相當複雜。')+'</div>';
+  // bars
+  document.getElementById('compactBars').innerHTML = Object.entries(compactAllResults).map(([k,v])=>{
+    const maxC=10;
+    return `<div style="display:flex;gap:.6rem;align-items:center">
+      <span style="font-size:.75rem;color:var(--dim);width:56px;font-family:'Share Tech Mono',monospace;flex-shrink:0">${compactShapes[k]?.name||k}</span>
+      <div style="flex:1;background:var(--bg);border-radius:2px;height:12px;position:relative">
+        <div style="width:${v/maxC*100}%;height:100%;background:${k===type?'var(--accent2)':'rgba(79,195,247,.35)'};border-radius:2px;transition:width .3s"></div>
+      </div>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:.78rem;color:${k===type?'var(--accent2)':'var(--dim)'};width:32px;text-align:right">${v.toFixed(1)}</span>
+    </div>`;
+  }).join('');
+}
+ 
+// ── 紋理描述互動 ──
+const textureInfos = {
+  smooth:   {R:0.05,U:0.82,e:1.2,  label:'平滑（低變異、高一致性、低熵）'},
+  coarse:   {R:0.68,U:0.18,e:4.1,  label:'粗糙（高變異、低一致性、高熵）'},
+  periodic: {R:0.45,U:0.42,e:2.8,  label:'週期性（中等變異，規律性高）'},
+  random:   {R:0.92,U:0.11,e:7.9,  label:'隨機雜訊（最高變異與熵、最低一致性）'},
+};
+ 
+function genTexture(cv, type) {
+  const ctx=cv.getContext('2d'),w=cv.width,h=cv.height;
+  const imgData=ctx.createImageData(w,h);const d=imgData.data;
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const i=(y*w+x)*4;
+      let v;
+      if(type==='smooth')v=140+10*Math.sin(x*0.15)+8*Math.cos(y*0.15)+Math.random()*5;
+      else if(type==='coarse')v=128+70*(Math.random()>0.5?1:-1)*Math.random();
+      else if(type==='periodic')v=128+60*Math.sin(x*0.5)*Math.cos(y*0.5);
+      else v=Math.floor(Math.random()*256);
+      v=Math.max(0,Math.min(255,Math.round(v)));
+      d[i]=d[i+1]=d[i+2]=v;d[i+3]=255;
+    }
+  }
+  ctx.putImageData(imgData,0,0);
+}
+ 
+function setTexture(type) {
+  document.querySelectorAll('[data-texture]').forEach(b =>
+    b.classList.toggle('active', b.getAttribute('data-texture') === type)
+  );
+  const cv=document.getElementById('textureCanvas');
+  if(cv)genTexture(cv,type);
+  const info=textureInfos[type];
+  if(!info)return;
+  const stats=[
+    {label:'平滑度 R',val:info.R.toFixed(2),max:1,color:'var(--accent)'},
+    {label:'一致性 U',val:info.U.toFixed(2),max:1,color:'var(--accent2)'},
+    {label:'平均亂度 e (bits)',val:info.e.toFixed(1),max:8,color:'#a78bfa'},
+  ];
+  document.getElementById('textureStats').innerHTML =
+    `<div style="font-size:.85rem;color:var(--dim);margin-bottom:.5rem;font-style:italic">${info.label}</div>` +
+    stats.map(s=>`<div style="background:var(--bg-light);border-radius:4px;padding:.6rem .9rem;border-left:2px solid ${s.color}">
+      <div style="display:flex;justify-content:space-between;margin-bottom:.3rem">
+        <span style="font-size:.82rem;color:var(--dim)">${s.label}</span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:.88rem;color:${s.color};font-weight:700">${s.val}</span>
+      </div>
+      <div style="background:var(--bg);border-radius:2px;height:8px">
+        <div style="width:${parseFloat(s.val)/s.max*100}%;height:100%;background:${s.color};border-radius:2px;opacity:.7;transition:width .35s"></div>
+      </div>
+    </div>`).join('');
+}
+ 
+// ── 影像特徵 Init ──
+function initFeaturesSection() {
+  setFeatCat('boundary');
+  drawChainCanvas();
+  drawDirCanvas();
+  setMomentShape('circle');
+  setCompact('circle');
+  setTexture('smooth');
+}
+
+
 // ══════════════════════════════
 // INIT ALL
 // ══════════════════════════════
