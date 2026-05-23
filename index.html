@@ -534,6 +534,66 @@ canvas#apCanvas{border-radius:50%}
           <div class="golden"><strong>🏆 黃金原則</strong>：寧可稍暗，絕不過曝。過曝的亮部細節永遠救不回來；偏暗的影像後製還有機會。拍攝順序：先調光圈 → 再調曝光 → 最後才動增益。</div>
         </div>
       </div>
+
+          <div class="ecard">
+      <div class="etrig" onclick="tog(this)"><div class="etl"><span class="eico">📐</span><div><div class="etitle">量測基礎：精度、準確度與像素解析度需求</div><div class="esum">精度高不代表準確，兩者都重要；像素解析度決定能看多小的缺陷</div></div></div><span class="earr">▼</span></div>
+      <div class="ebody">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem">
+          <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.1rem">
+            <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent);margin-bottom:.6rem">// 精度（Precision）</div>
+            <p style="font-size:.88rem;line-height:1.75;color:var(--dim)">量測值的<strong style="color:var(--text)">重複性與集中程度</strong>——多次量同一個東西，結果是否接近。精度高代表穩定，但不代表正確。</p>
+          </div>
+          <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.1rem">
+            <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.6rem">// 準確度（Accuracy）</div>
+            <p style="font-size:.88rem;line-height:1.75;color:var(--dim)">量測值與<strong style="color:var(--text)">真實值的接近程度</strong>——量出來的數字是否正確。準確度高才代表量測結果可信。</p>
+          </div>
+        </div>
+        <table class="cmp-table" style="margin-bottom:1.2rem">
+          <thead><tr><th>誤差類型</th><th>定義</th><th>改善方法</th></tr></thead>
+          <tbody>
+            <tr><td><strong>偏差（Bias）</strong></td><td>量測平均值與真實值的距離</td><td>透過校正（Calibration）消除</td></tr>
+            <tr><td><strong>隨機誤差（RE）</strong></td><td>量測值的分散程度，即不確定度</td><td>多次量測取平均降低</td></tr>
+            <tr><td><strong>系統誤差（SE）</strong></td><td>偏差與隨機誤差加總</td><td>需同時考慮校正與多次平均</td></tr>
+          </tbody>
+        </table>
+        <div class="sec-divider"></div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.8rem">// 像素解析度需求計算</div>
+        <p style="font-size:.9rem;line-height:1.78;color:var(--dim);margin-bottom:.8rem">量測精度需求決定了相機需要多細的像素解析度。計算方式：先確定容許誤差，再推算每個像素代表的實際尺寸。</p>
+        <div style="background:var(--bg);border-radius:6px;padding:1rem 1.2rem;border:1px solid var(--accent);margin-bottom:1rem">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--accent2);margin-bottom:.6rem">// 範例計算</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;font-size:.88rem;line-height:1.9;color:var(--dim)">
+            <div>工件尺寸：30mm × 1mm<br>容許誤差：±0.06 mm<br>像素解析度需求：<br><strong style="color:var(--accent)">PR = 0.06/4 = 0.015 mm/pixel</strong></div>
+            <div>FOV = 30 mm<br>所需像素數：<br><strong style="color:var(--accent2)">30 ÷ 0.015 = 2000 pixels</strong><br>→ 選 2048 pixels 的相機即可</div>
+          </div>
+        </div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.8rem">// 相機選型流程</div>
+        <div style="display:flex;flex-direction:column;gap:.4rem">
+          <div style="background:var(--bg-light);border-radius:4px;padding:.6rem .9rem;display:flex;gap:.8rem;align-items:flex-start">
+            <span style="font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--accent);flex-shrink:0;margin-top:.1rem">01</span>
+            <span style="font-size:.85rem;color:var(--dim);line-height:1.6">確定容許誤差——了解產品尺寸允許的最大誤差範圍，如 ±0.06 mm</span>
+          </div>
+          <div style="background:var(--bg-light);border-radius:4px;padding:.6rem .9rem;display:flex;gap:.8rem;align-items:flex-start">
+            <span style="font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--accent);flex-shrink:0;margin-top:.1rem">02</span>
+            <span style="font-size:.85rem;color:var(--dim);line-height:1.6">計算像素解析度 PR = 容許誤差 ÷ 4，確定相機像素需求</span>
+          </div>
+          <div style="background:var(--bg-light);border-radius:4px;padding:.6rem .9rem;display:flex;gap:.8rem;align-items:flex-start">
+            <span style="font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--accent);flex-shrink:0;margin-top:.1rem">03</span>
+            <span style="font-size:.85rem;color:var(--dim);line-height:1.6">根據像素需求及感測器尺寸選擇合適相機</span>
+          </div>
+          <div style="background:var(--bg-light);border-radius:4px;padding:.6rem .9rem;display:flex;gap:.8rem;align-items:flex-start">
+            <span style="font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--accent);flex-shrink:0;margin-top:.1rem">04</span>
+            <span style="font-size:.85rem;color:var(--dim);line-height:1.6">計算鏡頭放大倍率 M = Sensor Size ÷ FOV，選擇合適鏡頭</span>
+          </div>
+          <div style="background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.3);border-radius:4px;padding:.6rem .9rem;display:flex;gap:.8rem;align-items:flex-start">
+            <span style="font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--accent);flex-shrink:0;margin-top:.1rem">05</span>
+            <span style="font-size:.85rem;color:var(--text);line-height:1.6">依工作距離與放大倍率計算<strong>鏡頭焦距</strong> f：1/f = 1/u + 1/v，其中 v = u × M</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
     </div>
 
     <div class="img-card" style="margin-top:1.5rem">
@@ -632,7 +692,9 @@ canvas#apCanvas{border-radius:50%}
       </svg>
       <div class="img-cap">▲ 工業相機結構示意：正面為 C-Mount 接口與感光元件；背面為傳輸介面（GigE）與 I/O、Power 連接器</div>
     </div>
+
   </div>
+
 
   <!-- 鏡頭 -->
   <div class="mpanel" id="p-lens">
@@ -920,11 +982,11 @@ canvas#apCanvas{border-radius:50%}
     <div class="transform-widget">
       <div class="aw-title">// 互動示意：切換轉換函數，看影像如何變化</div>
       <div class="transform-btns">
-        <button class="t-btn active" onclick="setTransform('threshold')">二值化</button>
-        <button class="t-btn" onclick="setTransform('negative')">負轉換</button>
-        <button class="t-btn" onclick="setTransform('log')">對數轉換</button>
-        <button class="t-btn" onclick="setTransform('gamma_bright')">指數（γ&lt;1）</button>
-        <button class="t-btn" onclick="setTransform('gamma_dark')">指數（γ&gt;1）</button>
+        <button class="t-btn active" data-tr="threshold" onclick="setTransform('threshold')">二值化</button>
+        <button class="t-btn" data-tr="negative" onclick="setTransform('negative')">負轉換</button>
+        <button class="t-btn" data-tr="log" onclick="setTransform('log')">對數轉換</button>
+        <button class="t-btn" data-tr="gamma_bright" onclick="setTransform('gamma_bright')">指數（γ&lt;1）</button>
+        <button class="t-btn" data-tr="gamma_dark" onclick="setTransform('gamma_dark')">指數（γ&gt;1）</button>
       </div>
       <div class="transform-display">
         <div class="canvas-pair">
@@ -1008,13 +1070,13 @@ canvas#apCanvas{border-radius:50%}
     <div class="filter-widget">
       <div class="aw-title">// 互動示意：選擇濾波器，觀察效果與遮罩</div>
       <div class="filter-btns">
-        <button class="f-btn active" onclick="setFilter('mean')">均值濾波</button>
-        <button class="f-btn" onclick="setFilter('gaussian')">高斯濾波</button>
-        <button class="f-btn" onclick="setFilter('median')">中值濾波</button>
-        <button class="f-btn" onclick="setFilter('sharpen')">銳化濾波</button>
-        <button class="f-btn" onclick="setFilter('laplacian')">拉普拉斯</button>
-        <button class="f-btn" onclick="setFilter('sobel_x')">Sobel X</button>
-        <button class="f-btn" onclick="setFilter('sobel_y')">Sobel Y</button>
+        <button class="f-btn active" data-filter="mean" onclick="setFilter('mean')">均值濾波</button>
+        <button class="f-btn" data-filter="gaussian" onclick="setFilter('gaussian')">高斯濾波</button>
+        <button class="f-btn" data-filter="median" onclick="setFilter('median')">中值濾波</button>
+        <button class="f-btn" data-filter="sharpen" onclick="setFilter('sharpen')">銳化濾波</button>
+        <button class="f-btn" data-filter="laplacian" onclick="setFilter('laplacian')">拉普拉斯</button>
+        <button class="f-btn" data-filter="sobel_x" onclick="setFilter('sobel_x')">Sobel X</button>
+        <button class="f-btn" data-filter="sobel_y" onclick="setFilter('sobel_y')">Sobel Y</button>
       </div>
       <div class="filter-display">
         <div>
@@ -1163,12 +1225,12 @@ canvas#apCanvas{border-radius:50%}
     <div class="filter-widget">
       <div class="aw-title">// 互動示意：切換濾波器類型，看頻率響應</div>
       <div class="filter-btns" id="freqFilterBtns">
-        <button class="f-btn active" onclick="setFreqFilter('ideal_lp')">理想低通</button>
-        <button class="f-btn" onclick="setFreqFilter('butter_lp')">巴特沃斯低通</button>
-        <button class="f-btn" onclick="setFreqFilter('gauss_lp')">高斯低通</button>
-        <button class="f-btn" onclick="setFreqFilter('ideal_hp')">理想高通</button>
-        <button class="f-btn" onclick="setFreqFilter('butter_hp')">巴特沃斯高通</button>
-        <button class="f-btn" onclick="setFreqFilter('gauss_hp')">高斯高通</button>
+        <button class="f-btn active" data-freq="ideal_lp" onclick="setFreqFilter('ideal_lp')">理想低通</button>
+        <button class="f-btn" data-freq="butter_lp" onclick="setFreqFilter('butter_lp')">巴特沃斯低通</button>
+        <button class="f-btn" data-freq="gauss_lp" onclick="setFreqFilter('gauss_lp')">高斯低通</button>
+        <button class="f-btn" data-freq="ideal_hp" onclick="setFreqFilter('ideal_hp')">理想高通</button>
+        <button class="f-btn" data-freq="butter_hp" onclick="setFreqFilter('butter_hp')">巴特沃斯高通</button>
+        <button class="f-btn" data-freq="gauss_hp" onclick="setFreqFilter('gauss_hp')">高斯高通</button>
       </div>
       <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
         <div>
@@ -2151,6 +2213,69 @@ canvas#apCanvas{border-radius:50%}
       <tr><td><strong>紋理描述</strong></td><td>區域描述</td><td class="warn">依方法而異</td><td class="warn">中-高</td><td>材質辨識、表面檢測</td></tr>
     </tbody>
   </table>
+
+  <div class="sec-divider"></div>
+<div class="sec-header" style="margin-top:0">
+  <span class="sec-num">GEOMETRY</span>
+  <span class="sec-title">幾何特徵詳細公式</span>
+</div>
+<p style="font-size:.9rem;line-height:1.78;color:var(--dim);margin-bottom:1.2rem">幾何特徵以數學式描述物體的形狀、大小與方向，是工業瑕疵檢測和物件分類最常用的特徵類型。</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem">
+  <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.2rem">
+    <div style="font-size:.88rem;font-weight:700;color:var(--accent);margin-bottom:.3rem">緊湊度（Compactness）κ</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.82rem;color:var(--accent2);margin-bottom:.4rem">κ = P² / (4πA)</div>
+    <p style="font-size:.85rem;line-height:1.7;color:var(--dim)">P 為周長，A 為面積。圓形面積最大、緊湊度最小（κ=1）。形狀越不規則，κ 越大。</p>
+  </div>
+  <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.2rem">
+    <div style="font-size:.88rem;font-weight:700;color:var(--accent);margin-bottom:.3rem">離心率（Eccentricity）e</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.82rem;color:var(--accent2);margin-bottom:.4rem">e = b / a （a ≥ b）</div>
+    <p style="font-size:.85rem;line-height:1.7;color:var(--dim)">a 為長軸，b 為短軸。圓形 e=1，值越小代表物體越細長。用於辨識長寬比不同的物件。</p>
+  </div>
+  <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.2rem">
+    <div style="font-size:.88rem;font-weight:700;color:var(--accent);margin-bottom:.3rem">真圓度（Circularity）</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.82rem;color:var(--accent2);margin-bottom:.4rem">真圓度 = A / (π × a²)</div>
+    <p style="font-size:.85rem;line-height:1.7;color:var(--dim)">a 為長軸長度。圓形接近 1，其他形狀小於 1。衡量物體趨近圓形的程度，與緊湊度類似但定義不同。</p>
+  </div>
+  <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.2rem">
+    <div style="font-size:.88rem;font-weight:700;color:var(--accent);margin-bottom:.3rem">粗糙度（Roughness）R</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.82rem;color:var(--accent2);margin-bottom:.4rem">R = P / Lc</div>
+    <p style="font-size:.85rem;line-height:1.7;color:var(--dim)">P 為實際周長，Lc 為用多邊形繞物體外接的周長（凸包周長）。輪廓越平滑 R 越接近 1；輪廓凹凸不平則 P 較大、R 增大。</p>
+  </div>
+</div>
+
+<div style="background:var(--bg-light);border:1px solid rgba(0,229,204,.3);border-radius:6px;padding:1.2rem;margin-bottom:1.2rem">
+  <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.6rem">// 旋轉角（Orientation）θ</div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:.88rem;color:var(--text);margin-bottom:.5rem">θ = ½ · arctan(2μ₁₁ / (μ₂₀ − μ₀₂))</div>
+  <p style="font-size:.87rem;line-height:1.75;color:var(--dim)">用物體主慣性軸（擬合橢圓長軸）與 x 軸的夾角 θ 表示。判斷物體擺放方向，對夾取長方形物體尤為重要。μ₁₁、μ₂₀、μ₀₂ 為中心矩。</p>
+</div>
+
+<div class="sec-divider"></div>
+<div class="sec-header" style="margin-top:0">
+  <span class="sec-num">GRAYSCALE</span>
+  <span class="sec-title">灰階特徵</span>
+</div>
+<p style="font-size:.9rem;line-height:1.78;color:var(--dim);margin-bottom:1rem">灰階特徵描述影像區域內<strong style="color:var(--text)">亮度分布的統計特性</strong>，用於同大小形狀但顏色不同的物體分類，也用於瑕疵亮度異常偵測。</p>
+
+<table class="cmp-table" style="margin-bottom:1.2rem">
+  <thead><tr><th>特徵名稱</th><th>定義與計算方式</th><th>說明</th></tr></thead>
+  <tbody>
+    <tr><td><strong>最大灰階值</strong></td><td>影像區塊中最高的灰階像素值</td><td>反映最亮點</td></tr>
+    <tr><td><strong>最小灰階值</strong></td><td>影像區塊中最低的灰階像素值</td><td>反映最暗點</td></tr>
+    <tr><td><strong>平均灰階值</strong></td><td>灰階值總和除以像素數量</td><td>亮度的平均水平</td></tr>
+    <tr><td><strong>變異數</strong></td><td>σ² = (1/N) Σ(xᵢ − μ)²</td><td>灰階分布的波動程度</td></tr>
+    <tr><td><strong>標準差</strong></td><td>σ = √變異數</td><td>變異數的平方根，更直觀表示分散度</td></tr>
+    <tr><td><strong>變異係數 CV</strong></td><td>CV = σ / μ</td><td>標準差與平均值的比率，標準化波動率</td></tr>
+    <tr><td><strong>訊噪比 SNR</strong></td><td>SNR = μ / σ</td><td>灰階平均值當訊號，標準差當雜訊比</td></tr>
+  </tbody>
+</table>
+
+<div class="dyk">
+  <div class="dyk-icon">🏭</div>
+  <div><div class="dyk-label">// 幾何 vs 灰階特徵的選擇</div><div class="dyk-text">形狀分類（圓形/矩形/異形）→ <strong>幾何特徵</strong>（緊湊度、離心率、真圓度）；亮度/顏色異常偵測 → <strong>灰階特徵</strong>（平均值、變異數、SNR）；物件方向判斷 → <strong>旋轉角</strong>（配合夾取機器手臂）。實際應用通常兩者並用，組成特徵向量後再分類。</div></div>
+</div>
+
+
 </div>
 
 <!-- ── 影像匹配 ── -->
@@ -2386,6 +2511,77 @@ canvas#apCanvas{border-radius:50%}
     <div class="dyk-icon">💡</div>
     <div><div class="dyk-label">// 實務選擇策略</div><div class="dyk-text">固定角度、無縮放 → <strong>SAD/NCC</strong>（最快）；允許旋轉 → <strong>形狀特徵匹配</strong>；多視角、不同光照 → <strong>SIFT</strong>；多物件結構辨識 → <strong>關聯特徵匹配</strong>。加速技巧：所有方法皆可搭配<strong>影像金字塔</strong>策略，先在低解析度找粗略位置再精細定位。</div></div>
   </div>
+
+  <div class="sec-divider"></div>
+<div class="sec-header" style="margin-top:0">
+  <span class="sec-num">DEFECT</span>
+  <span class="sec-title">瑕疵檢測與 Golden Sample 比對法</span>
+</div>
+<p style="font-size:.97rem;line-height:1.82;color:var(--dim);margin-bottom:1.2rem">瑕疵是指在欲檢測物件上出現的「不想要」的異常，包括尺寸、形狀、顏色、表面刮傷等不符標準的狀況。Golden Sample 比對法是最直觀的瑕疵檢測策略——以良品金本作為標準，找出差異即為瑕疵。</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+  <div style="background:var(--bg-light);border:1px solid rgba(248,113,113,.3);border-radius:6px;padding:1.2rem">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:#f87171;margin-bottom:.6rem">// False Positive（FP）</div>
+    <div style="font-size:.95rem;font-weight:700;margin-bottom:.4rem">正品被誤判為瑕疵</div>
+    <p style="font-size:.87rem;line-height:1.75;color:var(--dim)">好產品被系統判定為不良品，需要人工二次複查，增加人力成本但較無危害性。</p>
+  </div>
+  <div style="background:var(--bg-light);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:1.2rem">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:#fbbf24;margin-bottom:.6rem">// False Negative（FN）⚠️ 嚴重</div>
+    <div style="font-size:.95rem;font-weight:700;margin-bottom:.4rem">瑕疵品被誤判為正品</div>
+    <p style="font-size:.87rem;line-height:1.75;color:var(--dim)">有缺陷的產品流入市場，可能造成客訴甚至嚴重後果，必須盡量避免。</p>
+  </div>
+</div>
+
+<div class="sec-header">
+  <span class="sec-num">METHOD</span>
+  <span class="sec-title">Golden Sample 三種比對類型</span>
+</div>
+<table class="cmp-table" style="margin-bottom:1.5rem">
+  <thead><tr><th>方法名稱</th><th>影像來源說明</th><th>適用情況</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Die to Die</strong></td><td>同一待測影像中相鄰重複圖案間相互比對</td><td>適用於重複性圖案物件，如光罩、晶圓</td></tr>
+    <tr><td><strong>Die to Reference</strong></td><td>待測影像與事先拍攝存檔的金本影像比對</td><td>標準的參考比對方式</td></tr>
+    <tr><td><strong>Die to Database</strong></td><td>從原始設計檔（如 CAD）產生金本，直接用設計圖當標準</td><td>無需實拍標準影像，直接用設計圖當金本</td></tr>
+  </tbody>
+</table>
+
+<div class="sec-header">
+  <span class="sec-num">MATH</span>
+  <span class="sec-title">比對運算方法</span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem">
+  <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.2rem">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.12em;color:var(--accent);margin-bottom:.5rem">// 1. 影像相減法</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.88rem;color:var(--text);margin-bottom:.6rem;line-height:1.8">D(x,y) = |f(x,y) − g(x,y)|<br>若 D(x,y) &gt; 閾值 → 判定為瑕疵</div>
+    <p style="font-size:.85rem;line-height:1.7;color:var(--dim)">f(x,y) 為待測影像，g(x,y) 為標準金本影像。對應位置逐點相減，差異超過閾值即為瑕疵。<strong style="color:var(--text)">注意：兩影像必須精確對齊，否則產生誤判。</strong></p>
+  </div>
+  <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.2rem">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.12em;color:var(--accent2);margin-bottom:.5rem">// 2. XOR 互斥或運算</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.3rem;margin-bottom:.6rem;text-align:center;font-family:'Share Tech Mono',monospace;font-size:.8rem">
+      <div style="background:var(--bg);padding:.3rem;border-radius:3px;color:var(--accent)">f</div>
+      <div style="background:var(--bg);padding:.3rem;border-radius:3px;color:var(--accent2)">g</div>
+      <div style="background:var(--bg);padding:.3rem;border-radius:3px;color:var(--text)">f⊕g</div>
+      <div style="background:var(--bg);padding:.3rem;border-radius:3px;color:var(--dim)">0</div>
+      <div style="background:var(--bg);padding:.3rem;border-radius:3px;color:var(--dim)">0</div>
+      <div style="background:var(--bg);padding:.3rem;border-radius:3px;color:var(--dim)">0</div>
+      <div style="background:var(--bg);padding:.3rem;border-radius:3px;color:var(--dim)">0</div>
+      <div style="background:var(--bg);padding:.3rem;border-radius:3px;color:var(--dim)">1</div>
+      <div style="background:rgba(248,113,113,.15);padding:.3rem;border-radius:3px;color:#f87171">1</div>
+      <div style="background:var(--bg);padding:.3rem;border-radius:3px;color:var(--dim)">1</div>
+      <div style="background:var(--bg);padding:.3rem;border-radius:3px;color:var(--dim)">0</div>
+      <div style="background:rgba(248,113,113,.15);padding:.3rem;border-radius:3px;color:#f87171">1</div>
+      <div style="background:var(--bg);padding:.3rem;border-radius:3px;color:var(--dim)">1</div>
+      <div style="background:var(--bg);padding:.3rem;border-radius:3px;color:var(--dim)">1</div>
+      <div style="background:var(--bg);padding:.3rem;border-radius:3px;color:var(--dim)">0</div>
+    </div>
+    <p style="font-size:.85rem;line-height:1.7;color:var(--dim)">對兩張二值化影像做 XOR，任何不同的點輸出為 1（即瑕疵位置）。相同點輸出為 0。較嚴格，任何差異都顯示為瑕疵。</p>
+  </div>
+</div>
+<div class="info-box yellow">
+  <strong>⚠️ 比對法的最大限制：</strong>定位精度與照明穩定性要求極高。兩影像若未精確對齊，會產生大量誤判（FP）。照明條件不穩定也會讓亮度差異被誤判為瑕疵。這是後續需要更進階解決方案的原因。
+</div>
+
+
 </div>
 
 
@@ -2397,18 +2593,152 @@ canvas#apCanvas{border-radius:50%}
 <!-- ════ 03 檢測應用 ════ -->
 <div class="page" id="pa">
 <div class="pi">
-  <div class="ptag">// 03 · DETECTION APPLICATIONS</div>
-  <h2 class="ptitle">檢測應用</h2>
+  <div class="ptag">// 03 · INSPECTION APPLICATIONS</div>
+  <h2 class="ptitle">檢測<span style="color:var(--accent)">應用</span></h2>
   <div class="divider"></div>
-  <p class="pdesc">機器視覺已廣泛應用於各產業的自動化生產線，以下列舉四大主要應用類型，每種應用對相機、演算法的需求各不相同。</p>
-  <div class="agrid">
-    <div class="ac"><div class="ach h1">🔍 外觀瑕疵檢測</div><div class="acb">檢測產品表面的刮痕、裂縫、汙漬、凹凸等缺陷。廣泛應用於 PCB 電路板、金屬零件、玻璃面板、塑膠外殼等產品的出廠品管。<div class="tags"><span class="tag">表面缺陷</span><span class="tag">AOI</span><span class="tag">PCB 檢測</span></div></div></div>
-    <div class="ac"><div class="ach h2">📏 尺寸量測</div><div class="acb">利用影像中的像素距離換算實際尺寸，進行非接觸式精密量測。可量測孔徑、間距、平行度等幾何參數，精度可達微米等級。<div class="tags"><span class="tag">非接觸量測</span><span class="tag">幾何量測</span><span class="tag">μm 精度</span></div></div></div>
-    <div class="ac"><div class="ach h3">🔤 條碼 / OCR 辨識</div><div class="acb">讀取產品上的一維條碼、QR Code、Data Matrix 或印刷文字，進行追蹤溯源、防錯漏裝，確保正確產品流入正確工序。<div class="tags"><span class="tag">QR Code</span><span class="tag">追蹤溯源</span><span class="tag">防錯裝</span></div></div></div>
-    <div class="ac"><div class="ach h4">🤖 定位引導</div><div class="acb">提供機器手臂精確的抓取座標，補償工件擺放誤差。結合視覺定位與機器人運動控制，實現高精度的撿料、組裝與貼合作業。<div class="tags"><span class="tag">機器手臂</span><span class="tag">視覺引導</span><span class="tag">Pick &amp; Place</span></div></div></div>
+  <p class="pdesc">將取像模組與影像處理技術整合應用於實際產業場景，每種應用對應不同的系統設計需求與檢測策略。</p>
+
+  <div class="mtabs">
+    <button class="mtab active" onclick="swTab(event,'app-led')">💡 LED 晶圓 AOI</button>
+    <!-- 未來可新增：<button class="mtab" onclick="swTab(event,'app-pcb')">🔌 PCB 檢測</button> -->
   </div>
+
+  <!-- ── LED 晶圓 AOI ── -->
+  <div class="mpanel active" id="p-app-led">
+
+    <div class="thero">
+      <div>
+        <div class="thl">// LED WAFER AOI</div>
+        <div class="tht">LED 晶圓<br>定位與量測</div>
+        <div class="thd">聚焦於二維自動化光學檢測系統在 LED 晶圓上的實際應用，涵蓋生產流程、AOI 系統架構、定位技術與誤差評估。</div>
+        <div class="srow">
+          <div class="si"><span class="sn">μm</span><span class="sl">定位精度等級</span></div>
+          <div class="si"><span class="sn">24/7</span><span class="sl">自動化不間斷</span></div>
+          <div class="si"><span class="sn">AOI</span><span class="sl">品質把關關卡</span></div>
+        </div>
+      </div>
+      <div class="thvis">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--accent2);letter-spacing:.15em;margin-bottom:.6rem">// AOI 系統四大模組</div>
+        <div class="vc vc-a"><div class="vcl" style="color:var(--accent)">📷 影像擷取</div><div class="vct">相機 + 鏡頭 + 光源</div><div class="vcd">Global Shutter、遠心鏡頭、適當光源角度凸顯晶片邊界與表面缺陷。</div></div>
+        <div class="vc vc-b"><div class="vcl" style="color:var(--accent2)">⚙️ 影像處理</div><div class="vct">前處理、特徵提取、分析</div><div class="vcd">空間濾波、邊緣偵測、形態學、特徵描述等技術，即時解析像素資料。</div></div>
+        <div class="vc vc-c"><div class="vcl" style="color:#90aabf">🎯 定位 + 量測</div><div class="vct">特徵匹配 → 座標轉換</div><div class="vcd">精確定位晶圓位置，輸出座標指揮機械手臂或量測模組完成檢測閉環。</div></div>
+      </div>
+    </div>
+
+    <!-- LED 生產流程 -->
+    <div class="ptag" style="margin-top:1.5rem">// LED 晶圓生產流程</div>
+    <div style="display:flex;flex-direction:column;gap:.5rem;margin:1rem 0 1.8rem">
+      <div style="display:flex;gap:1.2rem;align-items:stretch">
+        <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--bg-light);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--accent)">01</div>
+          <div style="width:1px;flex:1;background:var(--border);margin-top:.4rem"></div>
+        </div>
+        <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:.9rem 1.2rem;flex:1;margin-bottom:.5rem">
+          <div style="font-size:.92rem;font-weight:700;color:var(--text);margin-bottom:.2rem">晶圓生長</div>
+          <div style="font-size:.86rem;line-height:1.72;color:var(--dim)">利用外延技術在基板上生長 LED 發光層結構，決定基本光電特性。</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:1.2rem;align-items:stretch">
+        <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--bg-light);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--accent)">02</div>
+          <div style="width:1px;flex:1;background:var(--border);margin-top:.4rem"></div>
+        </div>
+        <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:.9rem 1.2rem;flex:1;margin-bottom:.5rem">
+          <div style="font-size:.92rem;font-weight:700;color:var(--text);margin-bottom:.2rem">晶圓切割</div>
+          <div style="font-size:.86rem;line-height:1.72;color:var(--dim)">將大晶圓切割成小晶片（Die），切割精度直接影響良率。</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:1.2rem;align-items:stretch">
+        <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--bg-light);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--accent)">03</div>
+          <div style="width:1px;flex:1;background:var(--border);margin-top:.4rem"></div>
+        </div>
+        <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:.9rem 1.2rem;flex:1;margin-bottom:.5rem">
+          <div style="font-size:.92rem;font-weight:700;color:var(--text);margin-bottom:.2rem">晶片封裝</div>
+          <div style="font-size:.86rem;line-height:1.72;color:var(--dim)">封裝成 LED 元件，需要精確定位確保打線連接正確。</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:1.2rem;align-items:stretch">
+        <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--accent2);display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:.78rem;color:#0d1117">04</div>
+        </div>
+        <div style="background:rgba(0,229,204,.08);border:1px solid rgba(0,229,204,.35);border-radius:6px;padding:.9rem 1.2rem;flex:1">
+          <div style="font-size:.92rem;font-weight:700;color:var(--accent2);margin-bottom:.2rem">測試與檢測 ← AOI 在這裡</div>
+          <div style="font-size:.86rem;line-height:1.72;color:var(--dim)">利用 AOI 進行尺寸量測與瑕疵等品質管制，是整個流程的品質把關關卡。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dyk">
+      <div class="dyk-icon">💡</div>
+      <div><div class="dyk-label">// 為什麼 LED 晶圓特別需要高精度 AOI？</div><div class="dyk-text">LED 晶圓上每顆晶片尺寸僅數百微米，位置誤差超過數微米就可能造成打線失敗或光學特性偏移。人工目視根本無法達到這個精度，且高速大量生產下人力完全無法負荷，AOI 是唯一解。</div></div>
+    </div>
+
+    <!-- 定位技術三步驟 -->
+    <div class="ptag" style="margin-top:2rem">// 定位技術核心三步驟</div>
+    <div class="pipeline" style="margin:1rem 0 1.5rem">
+      <div class="ps">
+        <div class="psn">METHOD 01</div>
+        <div class="pst">特徵點檢測</div>
+        <div class="psb">利用晶圓表面對準標記或結構特徵（SAD/NCC/SIFT）作為定位依據，偵測已知特徵位置建立座標參考。</div>
+      </div>
+      <div class="ps">
+        <div class="psn">METHOD 02</div>
+        <div class="pst">影像對正</div>
+        <div class="psb">將實際影像與標準模板比對，找最佳對應位置。考慮平移、旋轉誤差，以最小化誤差方式確定對正參數。</div>
+      </div>
+      <div class="ps">
+        <div class="psn">METHOD 03</div>
+        <div class="pst">座標轉換</div>
+        <div class="psb">將影像像素座標轉換為機械座標（mm/μm），需預先進行相機標定建立影像與實體空間的對應關係。</div>
+      </div>
+    </div>
+
+    <div class="dyk">
+      <div class="dyk-icon">🗺️</div>
+      <div><div class="dyk-label">// 定位的直覺類比</div><div class="dyk-text">定位過程就像用地圖確定自己所在位置——影像上的特徵點即為地圖上的地標；座標轉換則是將地圖資訊換算成機械可用的實際位置。</div></div>
+    </div>
+
+    <!-- 誤差評估 -->
+    <div class="ptag" style="margin-top:2rem">// 定位結果分析與誤差評估</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin:1rem 0 1.5rem">
+      <div style="background:var(--bg-light);border:1px solid rgba(248,113,113,.3);border-radius:6px;padding:1.2rem;text-align:center">
+        <div style="font-size:1.8rem;margin-bottom:.4rem">📍</div>
+        <div style="font-size:.88rem;font-weight:700;color:#f87171;margin-bottom:.3rem">定位誤差</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);margin-bottom:.5rem">Positioning Error</div>
+        <p style="font-size:.82rem;line-height:1.7;color:var(--dim)">實際位置與理想位置的距離差異，要求在數微米以內。</p>
+      </div>
+      <div style="background:var(--bg-light);border:1px solid rgba(0,229,204,.3);border-radius:6px;padding:1.2rem;text-align:center">
+        <div style="font-size:1.8rem;margin-bottom:.4rem">🔄</div>
+        <div style="font-size:.88rem;font-weight:700;color:var(--accent2);margin-bottom:.3rem">重複定位精度</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);margin-bottom:.5rem">Repeatability</div>
+        <p style="font-size:.82rem;line-height:1.7;color:var(--dim)">多次定位結果的一致性，系統可靠性的核心指標。</p>
+      </div>
+      <div style="background:var(--bg-light);border:1px solid rgba(79,195,247,.3);border-radius:6px;padding:1.2rem;text-align:center">
+        <div style="font-size:1.8rem;margin-bottom:.4rem">⚡</div>
+        <div style="font-size:.88rem;font-weight:700;color:var(--accent);margin-bottom:.3rem">反應速度</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);margin-bottom:.5rem">Response Time</div>
+        <p style="font-size:.82rem;line-height:1.7;color:var(--dim)">完成一次定位的時間，決定整條產線最高檢測速率。</p>
+      </div>
+    </div>
+
+    <!-- 關鍵詞總結 -->
+    <div class="ptag" style="margin-top:.5rem">// 重要關鍵詞總結</div>
+    <table class="cmp-table" style="margin-top:1rem">
+      <thead><tr><th>關鍵詞</th><th>定義</th></tr></thead>
+      <tbody>
+        <tr><td><strong>二維自動化光學檢測</strong></td><td>利用光學影像與影像處理技術，自動完成產品的檢測與量測任務</td></tr>
+        <tr><td><strong>LED 晶圓定位</strong></td><td>利用特徵匹配與影像對正技術，精確判斷 LED 晶圓在設備中的位置</td></tr>
+        <tr><td><strong>AOI 系統架構</strong></td><td>影像擷取、影像處理、定位演算法、量測模組及控制介面的完整系統結構</td></tr>
+        <tr><td><strong>影像對正</strong></td><td>將實際取得的影像與標準模板比對，找出最佳對應位置實現精確定位</td></tr>
+        <tr><td><strong>座標轉換</strong></td><td>將影像座標系轉換成機械座標系，確保座標可用於物理量測及控制</td></tr>
+      </tbody>
+    </table>
+
+  </div><!-- /p-app-led -->
 </div>
 </div>
+
 
 <!-- ════ 04 專題報告 ════ -->
 <div class="page" id="pr">
@@ -2442,6 +2772,7 @@ canvas#apCanvas{border-radius:50%}
 
 <div class="p-nav">
   <button class="p-btn" id="pb" onclick="goTo(cur-1)" disabled>←</button>
+  <button class="p-btn" onclick="goToTop()">↑</button>
   <button class="p-btn" id="pf2" onclick="goTo(cur+1)">→</button>
 </div>
 
@@ -2457,7 +2788,22 @@ function goTo(i){
   document.getElementById('pb').disabled=i===0;
   document.getElementById('pf2').disabled=i===N-1;
   document.querySelectorAll('.page')[i].scrollTop=0;
+  // 切到檢測應用頁時確保 LED tab 是 active
+  if(i===3){
+    document.querySelectorAll('#pa .mpanel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('#pa .mtab').forEach(t=>t.classList.remove('active'));
+    const led=document.getElementById('p-app-led');
+    if(led)led.classList.add('active');
+    const firstTab=document.querySelector('#pa .mtab');
+    if(firstTab)firstTab.classList.add('active');
+  }
+
 }
+
+function goToTop(){
+  document.querySelectorAll('.page')[cur].scrollTo({top:0, behavior:'smooth'});
+}
+
 function swTab(e,id){
   document.querySelectorAll('.mpanel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));
@@ -2800,7 +3146,9 @@ function drawTransformCurve(canvas,mode){
 let curTransform='threshold';
 function setTransform(mode){
   curTransform=mode;
-  document.querySelectorAll('.t-btn').forEach(b=>b.classList.toggle('active',b.onclick.toString().includes(mode)));
+  document.querySelectorAll('.t-btn').forEach(b=>
+    b.classList.toggle('active', b.getAttribute('data-tr')===mode)
+  );
   const info=trInfos[mode];
   document.getElementById('trOutLabel').textContent=info.label;
   document.getElementById('trDesc').textContent=info.desc;
@@ -2945,7 +3293,9 @@ function initFilterDemo(){
 }
 
 function setFilter(name){
-  document.querySelectorAll('.f-btn').forEach(b=>b.classList.toggle('active',b.onclick&&b.onclick.toString().includes(`'${name}'`)));
+ document.querySelectorAll('[data-filter]').forEach(b=>
+    b.classList.toggle('active', b.getAttribute('data-filter')===name)
+     );
   const kd=filterDefs[name];
   if(!kd)return;
   const origC=document.getElementById('filtOrig');
@@ -2967,6 +3317,8 @@ function setFilter(name){
   document.getElementById('filtUse').textContent=kd.use;
   renderKernelGrid(name);
 }
+
+
 
 // ══════════════════════════════
 // FREQUENCY FILTER DEMO
@@ -3049,7 +3401,9 @@ function drawFreqFilterShape(canvas,type,filterType){
 }
 
 function setFreqFilter(type){
-  document.querySelectorAll('#freqFilterBtns .f-btn').forEach(b=>b.classList.toggle('active',b.onclick&&b.onclick.toString().includes(`'${type}'`)));
+  document.querySelectorAll('#freqFilterBtns .f-btn').forEach(b=>
+    b.classList.toggle('active', b.getAttribute('data-freq')===type)
+  );
   const info=freqFilterInfos[type];
   if(!info)return;
   document.getElementById('freqFilterName').textContent=info.name;
@@ -4014,6 +4368,15 @@ function initFeaturesSection() {
   setMomentShape('circle');
   setCompact('circle');
   setTexture('smooth');
+  setTransform('threshold');
+  setFilter('mean');
+  setFreqFilter('ideal_lp');
+  setEdge('sobel_x');
+  setMorph('erosion');
+  setMorph2('boundary');
+  setMatchMethod('sad');
+  setPyramidLevel(3);
+  setSIFTStep(0);
 }
 
 // ══════════════════════════════
@@ -4298,6 +4661,8 @@ function setSIFTStep(idx){
   document.getElementById('siftStepFormula').textContent=s.formula;
 }
 
+
+
 // 影像匹配初始化（加入到 setTimeout 最末）
 initMatchDemo();
 setPyramidLevel(3);
@@ -4308,25 +4673,19 @@ setSIFTStep(0);
 // INIT ALL
 // ══════════════════════════════
 setTimeout(()=>{
-  // Imaging module widgets (guarded inside functions)
   updateAp(4);
   calcFOV();
   setLight('bright');
-
-  // Init transform demo
   const origC=document.getElementById('trOrigCanvas');
   if(origC){
     drawTestGradient(origC);
-    setTransform('threshold');
   }
   initHistograms();
   drawHeqDemo();
   initFilterDemo();
   drawFreqSamples();
-  setFreqFilter('ideal_lp');
   drawEdgeProfiles();
   initEdgeDemo();
-
   otsuData=computeOtsuCurve();
   otsuMax=Math.max(...otsuData.sigmas);
   otsuBestK=otsuData.sigmas.indexOf(otsuMax);
@@ -4335,7 +4694,9 @@ setTimeout(()=>{
   initRGDemo();
   initMorphDemo();
   initMorph2Demo();
-},400);
+  initMatchDemo();
+  initFeaturesSection();
+}, 400);
 </script>
 </body>
 </html>
