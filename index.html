@@ -968,6 +968,7 @@ canvas#apCanvas{border-radius:50%}
     <button class="pp-tab" onclick="swPP(event,'pp-morphology')">🔷 形態學</button>
     <button class="pp-tab" onclick="swPP(event,'pp-features')">🔍 影像特徵</button>
     <button class="pp-tab" onclick="swPP(event,'pp-matching')">🎯 影像匹配</button>
+    <button class="pp-tab" onclick="swPP(event,'pp-classify')">🤖 影像分類</button>
   </div>
 
   <!-- ── 強度轉換 ── -->
@@ -2584,6 +2585,219 @@ canvas#apCanvas{border-radius:50%}
 
 </div>
 
+<!-- ── 影像分類 ── -->
+<div class="pp-section" id="pp-classify">
+  <div class="sec-header">
+    <span class="sec-num">STEP 08</span>
+    <span class="sec-title">影像分類（Image Classification）</span>
+  </div>
+  <p style="font-size:.97rem;line-height:1.82;color:var(--dim);margin-bottom:1.2rem">
+    影像分類是將擷取到的特徵向量對應到特定類別的過程。<strong style="color:var(--text)">分類器（Classifier）</strong>利用訓練樣本的特徵建立規則，用來判斷未知樣本所屬類別——是瑕疵還是良品？是哪種物件？
+  </p>
+
+  <!-- 分類器概念卡 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+    <div style="background:var(--bg-light);border:1px solid rgba(79,195,247,.3);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent);margin-bottom:.6rem">// 監督式學習</div>
+      <div style="font-size:.95rem;font-weight:700;margin-bottom:.4rem">Supervised Learning</div>
+      <p style="font-size:.87rem;line-height:1.75;color:var(--dim)">依照已有標註的訓練資料（特徵＋類別標籤）進行學習，產生統計模型，用以推斷未知樣本的類別。需要足夠且正確標註的樣本。</p>
+    </div>
+    <div style="background:var(--bg-light);border:1px solid rgba(0,229,204,.3);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.6rem">// 特徵的用途</div>
+      <div style="font-size:.95rem;font-weight:700;margin-bottom:.4rem">Feature → Class</div>
+      <p style="font-size:.87rem;line-height:1.75;color:var(--dim)">瑕疵檢測：收集含有瑕疵與無瑕疵的樣本，挑出瑕疵特徵建立資料庫，透過分類器判定新測試樣本是否有瑕疵。</p>
+    </div>
+  </div>
+
+  <!-- 距離與 kNN -->
+  <div class="sec-header">
+    <span class="sec-num">METHOD 01</span>
+    <span class="sec-title">距離與最近鄰分類器</span>
+  </div>
+
+  <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.2rem;margin-bottom:1rem">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.6rem">// 歐氏距離（Euclidean Distance）</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.95rem;color:var(--text);margin-bottom:.5rem">d = √[(x₁−y₁)² + (x₂−y₂)² + … + (xN−yN)²]</div>
+    <p style="font-size:.87rem;line-height:1.75;color:var(--dim)">在 N 維特徵空間中，兩點間距離的計算方式。距離越小代表越相似，最近鄰分類器就是找距離最小的訓練樣本，將其類別賦予未知樣本。</p>
+  </div>
+
+  <!-- kNN 互動 -->
+  <div class="filter-widget">
+    <div class="aw-title">// 互動示意：拖拉 k 值，觀察 kNN 分類邊界變化</div>
+    <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
+      <span style="font-size:.82rem;color:var(--dim);font-family:'Share Tech Mono',monospace">k 值：</span>
+      <input id="knnSlider" type="range" min="1" max="11" step="2" value="3"
+        style="width:140px;accent-color:var(--accent)" oninput="updateKNN(this.value)">
+      <span id="knnKval" style="font-family:'Share Tech Mono',monospace;font-size:1rem;color:var(--accent);font-weight:700">k = 3</span>
+    </div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
+      <div>
+        <canvas id="knnCanvas" width="220" height="220"
+          style="border-radius:6px;border:1px solid var(--border);cursor:crosshair;background:#0d1117"
+          onclick="knnClick(event)"></canvas>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);margin-top:.4rem;text-align:center">點擊空白處新增測試點</div>
+      </div>
+      <div style="flex:1;min-width:180px">
+        <div style="display:flex;gap:.8rem;margin-bottom:.8rem;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:.4rem"><div style="width:12px;height:12px;border-radius:50%;background:#4fc3f7"></div><span style="font-size:.82rem;color:var(--dim)">類別 A</span></div>
+          <div style="display:flex;align-items:center;gap:.4rem"><div style="width:12px;height:12px;border-radius:50%;background:#f87171"></div><span style="font-size:.82rem;color:var(--dim)">類別 B</span></div>
+          <div style="display:flex;align-items:center;gap:.4rem"><div style="width:12px;height:12px;border-radius:50%;background:#fbbf24;border:2px solid white"></div><span style="font-size:.82rem;color:var(--dim)">測試點</span></div>
+        </div>
+        <div id="knnResult" style="font-size:.9rem;line-height:1.82;color:var(--dim)">點擊畫布中任意位置新增測試點，系統會找出最近的 k 個訓練樣本並投票決定類別。</div>
+        <div style="margin-top:.8rem;background:var(--bg);border-radius:5px;padding:.7rem 1rem;border-left:2px solid var(--accent2)">
+          <div style="font-size:.75rem;font-family:'Share Tech Mono',monospace;color:var(--accent2);margin-bottom:.3rem">// k 值的影響</div>
+          <div style="font-size:.85rem;color:var(--text);line-height:1.7">k 越小：邊界複雜，容易過擬合<br>k 越大：邊界平滑，考慮更多鄰居，避免雜訊</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 貝式分類器 -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">METHOD 02</span>
+    <span class="sec-title">貝式分類器（Bayesian Classifier）</span>
+  </div>
+
+  <div class="info-box blue" style="margin-bottom:1rem">
+    <strong>貝式定理：</strong>「在已知事件 B 發生的前提下，事件 A 發生的機率」
+  </div>
+
+  <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.2rem;margin-bottom:1rem">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.6rem">// 貝式定理公式</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:1rem;color:var(--text);margin-bottom:.6rem;text-align:center">P(A|B) = P(A) · P(B|A) / P(B)</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-top:.8rem">
+      <div style="background:var(--bg);border-radius:4px;padding:.7rem;text-align:center">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.82rem;color:var(--accent);margin-bottom:.3rem">P(wⱼ)</div>
+        <div style="font-size:.8rem;color:var(--dim);line-height:1.6">事前機率<br>類別出現機率</div>
+      </div>
+      <div style="background:var(--bg);border-radius:4px;padding:.7rem;text-align:center">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.82rem;color:var(--accent2);margin-bottom:.3rem">P(x|wⱼ)</div>
+        <div style="font-size:.8rem;color:var(--dim);line-height:1.6">條件機率<br>該類別下特徵出現機率</div>
+      </div>
+      <div style="background:var(--bg);border-radius:4px;padding:.7rem;text-align:center">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.82rem;color:#a78bfa;margin-bottom:.3rem">P(wⱼ|x)</div>
+        <div style="font-size:.8rem;color:var(--dim);line-height:1.6">事後機率<br>觀察特徵後的類別機率</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 貝式互動 -->
+  <div class="filter-widget">
+    <div class="aw-title">// 互動示意：調整事前機率，觀察分類決策邊界變化</div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
+      <div>
+        <canvas id="bayesCanvas" width="220" height="180"
+          style="border-radius:6px;border:1px solid var(--border);background:#0d1117"></canvas>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);margin-top:.4rem;text-align:center">機率分布與決策邊界</div>
+      </div>
+      <div style="flex:1;min-width:180px">
+        <div style="margin-bottom:.8rem">
+          <div style="font-size:.8rem;color:var(--dim);margin-bottom:.3rem;font-family:'Share Tech Mono',monospace">類別 A 事前機率 P(w₁)：<span id="bayesPriorVal" style="color:var(--accent)">0.50</span></div>
+          <input id="bayesPrior" type="range" min="0.1" max="0.9" step="0.05" value="0.5"
+            style="width:100%;accent-color:var(--accent)" oninput="updateBayes(this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--dim);font-family:'Share Tech Mono',monospace">
+            <span>P(w₁)=0.1</span><span>P(w₁)=0.9</span>
+          </div>
+        </div>
+        <div id="bayesDesc" style="font-size:.88rem;line-height:1.8;color:var(--dim)"></div>
+        <div style="margin-top:.7rem;background:var(--bg);border-radius:5px;padding:.6rem .9rem;border-left:2px solid var(--accent2);font-size:.83rem;color:var(--text);line-height:1.7">
+          <strong>MAP 決策：</strong>選使事後機率最大的類別<br>
+          ŵ = argmax P(wⱼ) · P(x|wⱼ)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SVM -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">METHOD 03</span>
+    <span class="sec-title">支持向量機（SVM）</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem">
+    <div style="background:var(--bg-light);border:1px solid rgba(167,139,250,.3);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:#a78bfa;margin-bottom:.5rem">// 核心概念</div>
+      <p style="font-size:.87rem;line-height:1.75;color:var(--dim)">找出一條最佳超平面（hyperplane），將兩類資料區分開，並使分類邊界的「邊緣（margin）」最大化，提高分類的魯棒性與泛化能力。</p>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.82rem;color:var(--text);margin-top:.6rem">超平面方程式：w · x + b = 0</div>
+    </div>
+    <div style="background:var(--bg-light);border:1px solid rgba(167,139,250,.3);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:#a78bfa;margin-bottom:.5rem">// 支持向量</div>
+      <p style="font-size:.87rem;line-height:1.75;color:var(--dim)">靠近超平面且決定邊界位置的樣本點。SVM 尋找使兩邊最近樣本點距離最大的超平面，這些關鍵點就是「支持向量」。</p>
+      <div style="margin-top:.6rem;font-size:.82rem;color:var(--dim)">分類標記：正類 +1，負類 −1</div>
+    </div>
+  </div>
+
+  <!-- SVM 互動 -->
+  <div class="filter-widget">
+    <div class="aw-title">// 互動示意：切換核函數，觀察分類邊界</div>
+    <div class="filter-btns" id="svmKernelBtns">
+      <button class="f-btn active" data-svm="linear" onclick="setSVMKernel('linear')">線性核</button>
+      <button class="f-btn" data-svm="poly" onclick="setSVMKernel('poly')">多項式核</button>
+      <button class="f-btn" data-svm="rbf" onclick="setSVMKernel('rbf')">高斯核（RBF）</button>
+    </div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;margin-top:.8rem">
+      <div>
+        <canvas id="svmCanvas" width="220" height="220"
+          style="border-radius:6px;border:1px solid var(--border);background:#0d1117"></canvas>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);margin-top:.4rem;text-align:center">分類邊界示意</div>
+      </div>
+      <div style="flex:1;min-width:180px">
+        <div id="svmKernelName" style="font-size:1rem;font-weight:700;color:#a78bfa;margin-bottom:.4rem"></div>
+        <div id="svmKernelFormula" style="font-family:'Share Tech Mono',monospace;font-size:.82rem;color:var(--accent2);margin-bottom:.6rem"></div>
+        <div id="svmKernelDesc" style="font-size:.88rem;line-height:1.8;color:var(--dim);margin-bottom:.7rem"></div>
+        <div style="background:var(--bg);border-radius:5px;padding:.6rem .9rem;border-left:2px solid #a78bfa;font-size:.83rem;color:var(--text);line-height:1.7">
+          <strong>Kernel Trick：</strong>不直接計算高維映射後的點，而是透過核函數計算內積，避免計算高維度的高成本。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FP / FN -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">CONCEPT</span>
+    <span class="sec-title">False Positive vs False Negative</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem">
+    <div style="background:var(--bg-light);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:#fbbf24;margin-bottom:.4rem">// False Positive（FP）</div>
+      <div style="font-size:.95rem;font-weight:700;margin-bottom:.4rem">正品被誤判為瑕疵</div>
+      <p style="font-size:.86rem;line-height:1.75;color:var(--dim)">好產品被判定為不良品，需要人工二次複查，增加人力成本但危害性較低。</p>
+      <div style="margin-top:.6rem;background:rgba(251,191,36,.07);border-radius:4px;padding:.4rem .7rem;font-size:.8rem;color:#fbbf24">影響效率，但相對容忍</div>
+    </div>
+    <div style="background:var(--bg-light);border:1px solid rgba(248,113,113,.35);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:#f87171;margin-bottom:.4rem">// False Negative（FN）⚠️</div>
+      <div style="font-size:.95rem;font-weight:700;margin-bottom:.4rem">瑕疵品被誤判為正品</div>
+      <p style="font-size:.86rem;line-height:1.75;color:var(--dim)">有缺陷的產品流入市場，可能造成客訴甚至嚴重後果，必須盡量避免。</p>
+      <div style="margin-top:.6rem;background:rgba(248,113,113,.07);border-radius:4px;padding:.4rem .7rem;font-size:.8rem;color:#f87171">影響品質，最需要避免</div>
+    </div>
+  </div>
+
+  <!-- 分類器比較表 -->
+  <div class="sec-header">
+    <span class="sec-num">COMPARE</span>
+    <span class="sec-title">傳統分類器比較</span>
+  </div>
+  <table class="cmp-table">
+    <thead><tr><th>分類器</th><th>判斷方式</th><th>計算基礎</th><th>適用情況</th></tr></thead>
+    <tbody>
+      <tr><td><strong>最近鄰（NN）</strong></td><td>與單一最近樣本距離</td><td>歐氏距離</td><td>資料樣本較少、需精確匹配</td></tr>
+      <tr><td><strong>k 最近鄰（kNN）</strong></td><td>取最近 k 個樣本多數決</td><td>多距離計算加權</td><td>資料雜訊多、需平衡 k 值</td></tr>
+      <tr><td><strong>貝式分類器</strong></td><td>利用機率與條件機率計算後驗決策</td><td>機率計算（需統計模型）</td><td>樣本數量大、類別特徵分布有重疊</td></tr>
+      <tr><td><strong>SVM</strong></td><td>最大邊緣超平面</td><td>最佳化問題</td><td>高維特徵、線性與非線性皆可</td></tr>
+      <tr><td><strong>特徵比對法</strong></td><td>計算特徵向量誤差</td><td>特徵差異計算</td><td>無法建立模型型時的簡易選擇</td></tr>
+    </tbody>
+  </table>
+
+  <div class="dyk" style="margin-top:1rem">
+    <div class="dyk-icon">🏭</div>
+    <div><div class="dyk-label">// 實務選擇策略</div><div class="dyk-text">樣本少且精確 → <strong>NN/kNN</strong>；需要機率輸出 → <strong>貝式分類器</strong>；高維特徵非線性問題 → <strong>SVM + RBF Kernel</strong>；無法建模 → <strong>特徵比對法</strong>。AOI 場景中 FN 的代價遠高於 FP，選擇模型時應偏向降低 FN。</div></div>
+  </div>
+</div>
+
 
 </div>
 </div>
@@ -2600,142 +2814,379 @@ canvas#apCanvas{border-radius:50%}
 
   <div class="mtabs">
     <button class="mtab active" onclick="swTab(event,'app-led')">💡 LED 晶圓 AOI</button>
-    <!-- 未來可新增：<button class="mtab" onclick="swTab(event,'app-pcb')">🔌 PCB 檢測</button> -->
+    <button class="mtab" onclick="swTab(event,'app-golf')">⛳ 高爾夫球 AOI</button>
   </div>
 
   <!-- ── LED 晶圓 AOI ── -->
-  <div class="mpanel active" id="p-app-led">
+ <div class="mpanel active" id="p-app-led">
 
-    <div class="thero">
+  <div class="thero">
+    <div>
+      <div class="thl">// LED WAFER AOI</div>
+      <div class="tht">LED 晶圓<br>定位與量測</div>
+      <div class="thd">LED 晶圓上每顆晶片尺寸僅數百微米，位置誤差超過幾微米就可能造成打線失敗或光學特性偏移。AOI 以非接觸方式在高速產線上完成人眼不可能達到的精密檢測。</div>
+      <div class="srow">
+        <div class="si"><span class="sn">μm</span><span class="sl">定位精度等級</span></div>
+        <div class="si"><span class="sn">24/7</span><span class="sl">連續自動化</span></div>
+        <div class="si"><span class="sn">&lt;5</span><span class="sl">允許誤差（μm）</span></div>
+      </div>
+    </div>
+    <div class="thvis">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--accent2);letter-spacing:.15em;margin-bottom:.6rem">// AOI 系統四大模組</div>
+      <div class="vc vc-a"><div class="vcl" style="color:var(--accent)">📷 影像擷取</div><div class="vct">相機 + 鏡頭 + 光源</div><div class="vcd">Global Shutter 相機、遠心鏡頭消除透視失真，適當光源角度凸顯晶片邊界與表面缺陷。</div></div>
+      <div class="vc vc-b"><div class="vcl" style="color:var(--accent2)">⚙️ 影像處理</div><div class="vct">前處理 → 特徵提取 → 分析</div><div class="vcd">空間濾波、邊緣偵測、形態學、特徵描述即時解析像素資料，輸出檢測結果。</div></div>
+      <div class="vc vc-c"><div class="vcl" style="color:#90aabf">🎯 定位 + 量測</div><div class="vct">特徵匹配 → 座標轉換</div><div class="vcd">精確定位晶圓位置，輸出機械座標指揮手臂或量測模組，完成檢測閉環。</div></div>
+    </div>
+  </div>
+
+  <!-- 生產流程 -->
+  <div class="ptag" style="margin-top:1.5rem">// LED 晶圓生產流程</div>
+  <div class="pipeline" style="margin:1rem 0 1.8rem">
+    <div class="ps"><div class="psn">01</div><div class="pst">晶圓生長</div><div class="psb">外延技術在基板上生長 LED 發光層，決定基本光電特性與發光效率。</div></div>
+    <div class="ps"><div class="psn">02</div><div class="pst">晶圓切割</div><div class="psb">將大晶圓切割成小晶片（Die），切割精度直接影響良率，切割線誤差須在容許範圍內。</div></div>
+    <div class="ps"><div class="psn">03</div><div class="pst">晶片封裝</div><div class="psb">封裝成 LED 元件，需精確定位確保晶片放置正確並完成打線連接。</div></div>
+    <div class="ps" style="border:none;background:rgba(0,229,204,.08);border-top:2px solid var(--accent2)"><div class="psn" style="color:var(--accent2)">04</div><div class="pst" style="color:var(--accent2)">測試與檢測</div><div class="psb">AOI 進行尺寸量測、瑕疵判定等品質管制，是整個流程的品質把關關卡。</div></div>
+  </div>
+
+  <!-- 相機選型 -->
+  <div class="sec-header">
+    <span class="sec-num">HARDWARE</span>
+    <span class="sec-title">晶圓 AOI 相機與鏡頭選型</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+    <div style="background:var(--bg-light);border:1px solid rgba(79,195,247,.3);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent);margin-bottom:.6rem">// 相機選型要點</div>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <div style="background:var(--bg);border-radius:4px;padding:.6rem .9rem;font-size:.85rem;color:var(--dim);line-height:1.7">
+          <strong style="color:var(--text)">Global Shutter</strong>：晶圓在移動中拍攝，必須全幅同步曝光，避免 Rolling Shutter 造成邊緣變形。
+        </div>
+        <div style="background:var(--bg);border-radius:4px;padding:.6rem .9rem;font-size:.85rem;color:var(--dim);line-height:1.7">
+          <strong style="color:var(--text)">高解析度</strong>：晶片尺寸數百微米，缺陷可能只有數微米，要求每像素代表 &lt;1μm。
+        </div>
+        <div style="background:var(--bg);border-radius:4px;padding:.6rem .9rem;font-size:.85rem;color:var(--dim);line-height:1.7">
+          <strong style="color:var(--text)">CoaXPress 介面</strong>：高速大面積晶圓需要高頻寬傳輸，CoaXPress 最高 25 Gbps，適合大解析度高速場合。
+        </div>
+      </div>
+    </div>
+    <div style="background:var(--bg-light);border:1px solid rgba(0,229,204,.3);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.6rem">// 鏡頭選型要點</div>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <div style="background:var(--bg);border-radius:4px;padding:.6rem .9rem;font-size:.85rem;color:var(--dim);line-height:1.7">
+          <strong style="color:var(--text)">遠心鏡頭</strong>：晶片需要精密尺寸量測，遠心鏡頭消除透視失真，景深內倍率完全一致。
+        </div>
+        <div style="background:var(--bg);border-radius:4px;padding:.6rem .9rem;font-size:.85rem;color:var(--dim);line-height:1.7">
+          <strong style="color:var(--text)">低畸變</strong>：量測用鏡頭需選低畸變規格，否則邊緣量測誤差會超出容許範圍。
+        </div>
+        <div style="background:var(--bg);border-radius:4px;padding:.6rem .9rem;font-size:.85rem;color:var(--dim);line-height:1.7">
+          <strong style="color:var(--text)">同軸光源</strong>：平坦高反光的晶圓表面使用外同軸光（Coaxial Light），讓微細刮痕現形。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 像素解析度計算互動 -->
+  <div class="filter-widget">
+    <div class="aw-title">// 互動計算：LED 晶圓像素解析度需求</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:1rem">
       <div>
-        <div class="thl">// LED WAFER AOI</div>
-        <div class="tht">LED 晶圓<br>定位與量測</div>
-        <div class="thd">聚焦於二維自動化光學檢測系統在 LED 晶圓上的實際應用，涵蓋生產流程、AOI 系統架構、定位技術與誤差評估。</div>
-        <div class="srow">
-          <div class="si"><span class="sn">μm</span><span class="sl">定位精度等級</span></div>
-          <div class="si"><span class="sn">24/7</span><span class="sl">自動化不間斷</span></div>
-          <div class="si"><span class="sn">AOI</span><span class="sl">品質把關關卡</span></div>
-        </div>
+        <div style="font-size:.78rem;color:var(--dim);margin-bottom:.3rem">晶圓視野寬度 FOV (mm)</div>
+        <input id="ledFOV" type="number" value="30" step="1" min="5" max="200"
+          style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:.5rem .7rem;color:var(--text);font-size:.95rem"
+          oninput="calcLED()">
       </div>
-      <div class="thvis">
-        <div style="font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--accent2);letter-spacing:.15em;margin-bottom:.6rem">// AOI 系統四大模組</div>
-        <div class="vc vc-a"><div class="vcl" style="color:var(--accent)">📷 影像擷取</div><div class="vct">相機 + 鏡頭 + 光源</div><div class="vcd">Global Shutter、遠心鏡頭、適當光源角度凸顯晶片邊界與表面缺陷。</div></div>
-        <div class="vc vc-b"><div class="vcl" style="color:var(--accent2)">⚙️ 影像處理</div><div class="vct">前處理、特徵提取、分析</div><div class="vcd">空間濾波、邊緣偵測、形態學、特徵描述等技術，即時解析像素資料。</div></div>
-        <div class="vc vc-c"><div class="vcl" style="color:#90aabf">🎯 定位 + 量測</div><div class="vct">特徵匹配 → 座標轉換</div><div class="vcd">精確定位晶圓位置，輸出座標指揮機械手臂或量測模組完成檢測閉環。</div></div>
+      <div>
+        <div style="font-size:.78rem;color:var(--dim);margin-bottom:.3rem">容許誤差 (μm)</div>
+        <input id="ledTol" type="number" value="4" step="0.5" min="0.5" max="50"
+          style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:.5rem .7rem;color:var(--text);font-size:.95rem"
+          oninput="calcLED()">
       </div>
     </div>
-
-    <!-- LED 生產流程 -->
-    <div class="ptag" style="margin-top:1.5rem">// LED 晶圓生產流程</div>
-    <div style="display:flex;flex-direction:column;gap:.5rem;margin:1rem 0 1.8rem">
-      <div style="display:flex;gap:1.2rem;align-items:stretch">
-        <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
-          <div style="width:32px;height:32px;border-radius:50%;background:var(--bg-light);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--accent)">01</div>
-          <div style="width:1px;flex:1;background:var(--border);margin-top:.4rem"></div>
-        </div>
-        <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:.9rem 1.2rem;flex:1;margin-bottom:.5rem">
-          <div style="font-size:.92rem;font-weight:700;color:var(--text);margin-bottom:.2rem">晶圓生長</div>
-          <div style="font-size:.86rem;line-height:1.72;color:var(--dim)">利用外延技術在基板上生長 LED 發光層結構，決定基本光電特性。</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:1.2rem;align-items:stretch">
-        <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
-          <div style="width:32px;height:32px;border-radius:50%;background:var(--bg-light);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--accent)">02</div>
-          <div style="width:1px;flex:1;background:var(--border);margin-top:.4rem"></div>
-        </div>
-        <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:.9rem 1.2rem;flex:1;margin-bottom:.5rem">
-          <div style="font-size:.92rem;font-weight:700;color:var(--text);margin-bottom:.2rem">晶圓切割</div>
-          <div style="font-size:.86rem;line-height:1.72;color:var(--dim)">將大晶圓切割成小晶片（Die），切割精度直接影響良率。</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:1.2rem;align-items:stretch">
-        <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
-          <div style="width:32px;height:32px;border-radius:50%;background:var(--bg-light);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--accent)">03</div>
-          <div style="width:1px;flex:1;background:var(--border);margin-top:.4rem"></div>
-        </div>
-        <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:.9rem 1.2rem;flex:1;margin-bottom:.5rem">
-          <div style="font-size:.92rem;font-weight:700;color:var(--text);margin-bottom:.2rem">晶片封裝</div>
-          <div style="font-size:.86rem;line-height:1.72;color:var(--dim)">封裝成 LED 元件，需要精確定位確保打線連接正確。</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:1.2rem;align-items:stretch">
-        <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
-          <div style="width:32px;height:32px;border-radius:50%;background:var(--accent2);display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:.78rem;color:#0d1117">04</div>
-        </div>
-        <div style="background:rgba(0,229,204,.08);border:1px solid rgba(0,229,204,.35);border-radius:6px;padding:.9rem 1.2rem;flex:1">
-          <div style="font-size:.92rem;font-weight:700;color:var(--accent2);margin-bottom:.2rem">測試與檢測 ← AOI 在這裡</div>
-          <div style="font-size:.86rem;line-height:1.72;color:var(--dim)">利用 AOI 進行尺寸量測與瑕疵等品質管制，是整個流程的品質把關關卡。</div>
-        </div>
+    <div style="background:var(--bg);border-radius:6px;padding:1rem 1.2rem;border:1px solid var(--accent)">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--accent2);letter-spacing:.14em;margin-bottom:.7rem">// 計算結果</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem">
+        <div><div style="font-size:.75rem;color:var(--dim)">像素解析度 PR</div><div style="font-family:'Share Tech Mono',monospace;font-size:1.2rem;font-weight:700;color:var(--accent)" id="ledPR">1.00 μm</div></div>
+        <div><div style="font-size:.75rem;color:var(--dim)">所需像素數</div><div style="font-family:'Share Tech Mono',monospace;font-size:1.2rem;font-weight:700;color:var(--accent2)" id="ledPX">30000 px</div></div>
+        <div><div style="font-size:.75rem;color:var(--dim)">建議相機</div><div style="font-family:'Share Tech Mono',monospace;font-size:1.2rem;font-weight:700;color:#a78bfa" id="ledCAM">32K Line</div></div>
       </div>
     </div>
-
-    <div class="dyk">
-      <div class="dyk-icon">💡</div>
-      <div><div class="dyk-label">// 為什麼 LED 晶圓特別需要高精度 AOI？</div><div class="dyk-text">LED 晶圓上每顆晶片尺寸僅數百微米，位置誤差超過數微米就可能造成打線失敗或光學特性偏移。人工目視根本無法達到這個精度，且高速大量生產下人力完全無法負荷，AOI 是唯一解。</div></div>
+    <div style="margin-top:.8rem;font-size:.82rem;color:var(--dim);line-height:1.7">
+      公式：PR = 容許誤差 ÷ 4，所需像素數 = FOV ÷ PR（單位換算後）
     </div>
+  </div>
 
-    <!-- 定位技術三步驟 -->
-    <div class="ptag" style="margin-top:2rem">// 定位技術核心三步驟</div>
-    <div class="pipeline" style="margin:1rem 0 1.5rem">
-      <div class="ps">
-        <div class="psn">METHOD 01</div>
-        <div class="pst">特徵點檢測</div>
-        <div class="psb">利用晶圓表面對準標記或結構特徵（SAD/NCC/SIFT）作為定位依據，偵測已知特徵位置建立座標參考。</div>
-      </div>
-      <div class="ps">
-        <div class="psn">METHOD 02</div>
-        <div class="pst">影像對正</div>
-        <div class="psb">將實際影像與標準模板比對，找最佳對應位置。考慮平移、旋轉誤差，以最小化誤差方式確定對正參數。</div>
-      </div>
-      <div class="ps">
-        <div class="psn">METHOD 03</div>
-        <div class="pst">座標轉換</div>
-        <div class="psb">將影像像素座標轉換為機械座標（mm/μm），需預先進行相機標定建立影像與實體空間的對應關係。</div>
+  <!-- 定位技術 -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">LOCATE</span>
+    <span class="sec-title">定位技術核心三步驟</span>
+  </div>
+
+  <div class="pipeline" style="margin:1rem 0 1.2rem">
+    <div class="ps">
+      <div class="psn">METHOD 01</div>
+      <div class="pst">特徵點檢測</div>
+      <div class="psb">利用晶圓表面對準標記（Alignment Mark）或晶片邊界作為定位依據，SAD/NCC/SIFT 找出已知特徵位置。</div>
+    </div>
+    <div class="ps">
+      <div class="psn">METHOD 02</div>
+      <div class="pst">影像對正</div>
+      <div class="psb">將實際影像與標準模板比對，找最佳對應位置。考慮平移、旋轉誤差，以最小化誤差方式確定對正參數。</div>
+    </div>
+    <div class="ps">
+      <div class="psn">METHOD 03</div>
+      <div class="pst">座標轉換</div>
+      <div class="psb">將影像像素座標轉換為機械座標（mm/μm），需預先相機標定建立影像與實體空間的對應關係。</div>
+    </div>
+  </div>
+
+  <!-- 瑕疵類型互動 -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">DEFECT</span>
+    <span class="sec-title">LED 晶圓常見瑕疵類型</span>
+  </div>
+
+  <div class="filter-widget">
+    <div class="aw-title">// 互動示意：點選瑕疵類型，查看影像特徵說明</div>
+    <div class="filter-btns" id="ledDefectBtns">
+      <button class="f-btn active" data-led="scratch" onclick="setLEDDefect('scratch')">刮傷</button>
+      <button class="f-btn" data-led="particle" onclick="setLEDDefect('particle')">異物粒子</button>
+      <button class="f-btn" data-led="crack" onclick="setLEDDefect('crack')">裂痕</button>
+      <button class="f-btn" data-led="pit" onclick="setLEDDefect('pit')">凹坑</button>
+      <button class="f-btn" data-led="edge" onclick="setLEDDefect('edge')">邊緣缺口</button>
+    </div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;margin-top:.8rem">
+      <canvas id="ledDefectCanvas" width="180" height="180"
+        style="border-radius:6px;border:1px solid var(--border);background:#0d1117;flex-shrink:0"></canvas>
+      <div style="flex:1;min-width:200px">
+        <div id="ledDefectName" style="font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:.4rem"></div>
+        <div id="ledDefectDesc" style="font-size:.9rem;line-height:1.82;color:var(--dim);margin-bottom:.7rem"></div>
+        <div id="ledDefectNote" style="background:var(--bg);border-radius:5px;padding:.6rem .9rem;border-left:2px solid var(--accent2);font-size:.85rem;color:var(--text);line-height:1.7"></div>
       </div>
     </div>
+  </div>
 
-    <div class="dyk">
-      <div class="dyk-icon">🗺️</div>
-      <div><div class="dyk-label">// 定位的直覺類比</div><div class="dyk-text">定位過程就像用地圖確定自己所在位置——影像上的特徵點即為地圖上的地標；座標轉換則是將地圖資訊換算成機械可用的實際位置。</div></div>
+  <!-- 誤差評估 -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">EVAL</span>
+    <span class="sec-title">定位結果分析與誤差評估</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+    <div style="background:var(--bg-light);border:1px solid rgba(248,113,113,.3);border-radius:6px;padding:1.2rem;text-align:center">
+      <div style="font-size:1.8rem;margin-bottom:.4rem">📍</div>
+      <div style="font-size:.88rem;font-weight:700;color:#f87171;margin-bottom:.3rem">定位誤差</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);margin-bottom:.5rem">Positioning Error</div>
+      <p style="font-size:.82rem;line-height:1.7;color:var(--dim)">實際位置與理想位置的距離差異，要求在數微米以內。</p>
     </div>
+    <div style="background:var(--bg-light);border:1px solid rgba(0,229,204,.3);border-radius:6px;padding:1.2rem;text-align:center">
+      <div style="font-size:1.8rem;margin-bottom:.4rem">🔄</div>
+      <div style="font-size:.88rem;font-weight:700;color:var(--accent2);margin-bottom:.3rem">重複定位精度</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);margin-bottom:.5rem">Repeatability</div>
+      <p style="font-size:.82rem;line-height:1.7;color:var(--dim)">多次定位結果的一致性，系統可靠性的核心指標。</p>
+    </div>
+    <div style="background:var(--bg-light);border:1px solid rgba(79,195,247,.3);border-radius:6px;padding:1.2rem;text-align:center">
+      <div style="font-size:1.8rem;margin-bottom:.4rem">⚡</div>
+      <div style="font-size:.88rem;font-weight:700;color:var(--accent);margin-bottom:.3rem">反應速度</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);margin-bottom:.5rem">Response Time</div>
+      <p style="font-size:.82rem;line-height:1.7;color:var(--dim)">完成一次定位的時間，決定整條產線最高檢測速率。</p>
+    </div>
+  </div>
 
-    <!-- 誤差評估 -->
-    <div class="ptag" style="margin-top:2rem">// 定位結果分析與誤差評估</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin:1rem 0 1.5rem">
-      <div style="background:var(--bg-light);border:1px solid rgba(248,113,113,.3);border-radius:6px;padding:1.2rem;text-align:center">
-        <div style="font-size:1.8rem;margin-bottom:.4rem">📍</div>
-        <div style="font-size:.88rem;font-weight:700;color:#f87171;margin-bottom:.3rem">定位誤差</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);margin-bottom:.5rem">Positioning Error</div>
-        <p style="font-size:.82rem;line-height:1.7;color:var(--dim)">實際位置與理想位置的距離差異，要求在數微米以內。</p>
-      </div>
-      <div style="background:var(--bg-light);border:1px solid rgba(0,229,204,.3);border-radius:6px;padding:1.2rem;text-align:center">
-        <div style="font-size:1.8rem;margin-bottom:.4rem">🔄</div>
-        <div style="font-size:.88rem;font-weight:700;color:var(--accent2);margin-bottom:.3rem">重複定位精度</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);margin-bottom:.5rem">Repeatability</div>
-        <p style="font-size:.82rem;line-height:1.7;color:var(--dim)">多次定位結果的一致性，系統可靠性的核心指標。</p>
-      </div>
-      <div style="background:var(--bg-light);border:1px solid rgba(79,195,247,.3);border-radius:6px;padding:1.2rem;text-align:center">
-        <div style="font-size:1.8rem;margin-bottom:.4rem">⚡</div>
-        <div style="font-size:.88rem;font-weight:700;color:var(--accent);margin-bottom:.3rem">反應速度</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);margin-bottom:.5rem">Response Time</div>
-        <p style="font-size:.82rem;line-height:1.7;color:var(--dim)">完成一次定位的時間，決定整條產線最高檢測速率。</p>
+  <div class="dyk">
+    <div class="dyk-icon">💡</div>
+    <div><div class="dyk-label">// 為什麼 LED 晶圓特別需要高精度 AOI？</div><div class="dyk-text">晶片尺寸僅數百微米，打線直徑約 25μm，任何定位誤差都可能讓打線落在錯誤位置，造成短路或斷路。人工目視根本無法達到這個精度，AOI 是唯一解。</div></div>
+  </div>
+
+</div><!-- /p-app-led -->
+
+
+  <!-- ── 高爾夫球 AOI ── -->
+<div class="mpanel" id="p-app-golf">
+
+  <div class="thero">
+    <div>
+      <div class="thl">// GOLF BALL AOI</div>
+      <div class="tht">高爾夫球<br>同心度與表面檢測</div>
+      <div class="thd">高爾夫球的品質取決於同心度與表面完整性。傳統人工破壞性檢測成本高昂，AOI 非破壞性檢測以微米級精度取代人工，大幅節省成本與時間。</div>
+      <div class="srow">
+        <div class="si"><span class="sn">97.5%</span><span class="sl">檢出成功率</span></div>
+        <div class="si"><span class="sn">2.3s</span><span class="sl">每顆檢測時間</span></div>
+        <div class="si"><span class="sn">1/10</span><span class="sl">設備成本比廠商</span></div>
       </div>
     </div>
+    <div class="thvis">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--accent2);letter-spacing:.15em;margin-bottom:.6rem">// 兩大檢測項目</div>
+      <div class="vc vc-a"><div class="vcl" style="color:var(--accent)">同心度檢測</div><div class="vct">非破壞性 X 光檢測</div><div class="vcd">量測球心與各層厚度邊界，精確計算偏移量，偏差極小（0.00幾 inch 內），符合容許誤差。</div></div>
+      <div class="vc vc-b"><div class="vcl" style="color:var(--accent2)">表面瑕疵檢測</div><div class="vct">暗視野 + 多角度拍攝</div><div class="vcd">偵測針孔裂、結合線、凹凸、拔斷、雙眼皮、頂針等六大瑕疵類型，利用球面結構判別。</div></div>
+    </div>
+  </div>
 
-    <!-- 關鍵詞總結 -->
-    <div class="ptag" style="margin-top:.5rem">// 重要關鍵詞總結</div>
-    <table class="cmp-table" style="margin-top:1rem">
-      <thead><tr><th>關鍵詞</th><th>定義</th></tr></thead>
-      <tbody>
-        <tr><td><strong>二維自動化光學檢測</strong></td><td>利用光學影像與影像處理技術，自動完成產品的檢測與量測任務</td></tr>
-        <tr><td><strong>LED 晶圓定位</strong></td><td>利用特徵匹配與影像對正技術，精確判斷 LED 晶圓在設備中的位置</td></tr>
-        <tr><td><strong>AOI 系統架構</strong></td><td>影像擷取、影像處理、定位演算法、量測模組及控制介面的完整系統結構</td></tr>
-        <tr><td><strong>影像對正</strong></td><td>將實際取得的影像與標準模板比對，找出最佳對應位置實現精確定位</td></tr>
-        <tr><td><strong>座標轉換</strong></td><td>將影像座標系轉換成機械座標系，確保座標可用於物理量測及控制</td></tr>
-      </tbody>
-    </table>
+  <!-- 生產流程 -->
+  <div class="ptag" style="margin-top:1.5rem">// 高爾夫球製造流程</div>
+  <div class="pipeline" style="margin:1rem 0 1.5rem">
+    <div class="ps"><div class="psn">01</div><div class="pst">攪料</div><div class="psb">將橡膠與塑膠原料混合攪拌，形成球心材料。</div></div>
+    <div class="ps"><div class="psn">02</div><div class="pst">熱壓成型</div><div class="psb">製造球心，決定球體的彈性與重心分布。</div></div>
+    <div class="ps"><div class="psn">03</div><div class="pst">研磨</div><div class="psb">將球心表面磨平，確保各層包覆均勻。</div></div>
+    <div class="ps"><div class="psn">04</div><div class="pst">射出成形</div><div class="psb">包覆第一層坑洞狀外膜（dimple 結構）。</div></div>
+    <div class="ps"><div class="psn">05</div><div class="pst">再研磨</div><div class="psb">再次研磨使表面平整，去除多餘毛邊。</div></div>
+    <div class="ps"><div class="psn">06</div><div class="pst">噴漆包裝</div><div class="psb">噴漆並印上公司 LOGO，最後包裝出貨。</div></div>
+  </div>
 
-  </div><!-- /p-app-led -->
+  <!-- 同心度 -->
+  <div class="sec-header">
+    <span class="sec-num">INSPECT 01</span>
+    <span class="sec-title">同心度檢測：人工破壞性 vs AOI 非破壞性</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+    <div style="background:var(--bg-light);border:1px solid rgba(248,113,113,.3);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:#f87171;margin-bottom:.6rem">// 傳統人工破壞性</div>
+      <div style="font-size:.9rem;font-weight:700;margin-bottom:.4rem">切開高爾夫球</div>
+      <div style="font-size:.85rem;line-height:1.8;color:var(--dim)">
+        1. 切開球（需要鋒利刀具與小心操作）<br>
+        2. 在切開的球兩側各鑲一個小洞<br>
+        3. 使用儀器量測兩側各層厚度<br>
+        4. 計算偏移量以評估同心度
+      </div>
+      <div style="margin-top:.8rem;background:rgba(248,113,113,.07);border-radius:4px;padding:.5rem .8rem;font-size:.8rem;color:#f87171">⚠️ 破壞性檢測會造成球體損壞且耗費大量人力與時間</div>
+    </div>
+    <div style="background:var(--bg-light);border:1px solid rgba(0,229,204,.3);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.6rem">// AOI 非破壞性 X 光</div>
+      <div style="font-size:.9rem;font-weight:700;margin-bottom:.4rem">X 光邊緣偵測</div>
+      <div style="font-size:.85rem;line-height:1.8;color:var(--dim)">
+        • 使用 X 光設備進行非破壞性檢測<br>
+        • 量測球心與各層厚度的邊界<br>
+        • 拍攝兩個垂直方向（0°與90°）<br>
+        • 進行邊緣偵測並計算偏移量
+      </div>
+      <div style="margin-top:.8rem;background:rgba(0,229,204,.07);border-radius:4px;padding:.5rem .8rem;font-size:.8rem;color:var(--accent2)">✓ 自製設備約為廠商原價的 1/10，節省大量成本</div>
+    </div>
+  </div>
+
+  <!-- 同心度計算互動 -->
+  <div class="filter-widget">
+    <div class="aw-title">// 互動示意：拖拉球心偏移，觀察同心度偏移量計算</div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        <div style="display:flex;gap:.6rem;align-items:center">
+          <span style="font-size:.8rem;color:var(--dim);font-family:'Share Tech Mono',monospace;width:50px">水平 A：</span>
+          <input id="golfA" type="range" min="-30" max="30" value="8"
+            style="width:120px;accent-color:var(--accent)" oninput="updateGolf()">
+          <span id="golfAval" style="font-family:'Share Tech Mono',monospace;font-size:.82rem;color:var(--accent);width:36px">8</span>
+        </div>
+        <div style="display:flex;gap:.6rem;align-items:center">
+          <span style="font-size:.8rem;color:var(--dim);font-family:'Share Tech Mono',monospace;width:50px">垂直 B：</span>
+          <input id="golfB" type="range" min="-30" max="30" value="5"
+            style="width:120px;accent-color:var(--accent2)" oninput="updateGolf()">
+          <span id="golfBval" style="font-family:'Share Tech Mono',monospace;font-size:.82rem;color:var(--accent2);width:36px">5</span>
+        </div>
+        <canvas id="golfCanvas" width="200" height="200"
+          style="border-radius:50%;border:2px solid var(--border);background:#0d1117"></canvas>
+      </div>
+      <div style="flex:1;min-width:180px">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.8rem">// 偏移量計算</div>
+        <div style="background:var(--bg);border-radius:6px;padding:1rem 1.2rem;border:1px solid var(--accent);margin-bottom:.8rem">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--accent2);margin-bottom:.5rem">偏移量 = √(A² + B²)</div>
+          <div style="font-size:1.6rem;font-weight:700;font-family:'Share Tech Mono',monospace;color:var(--accent)" id="golfOffset">9.43</div>
+          <div style="font-size:.78rem;color:var(--dim);margin-top:.3rem">其中 A、B 為兩個垂直方向的厚度偏差</div>
+        </div>
+        <div id="golfJudge" style="border-radius:5px;padding:.7rem 1rem;font-size:.88rem;font-weight:700"></div>
+        <div style="margin-top:.8rem;font-size:.84rem;line-height:1.78;color:var(--dim)">容許誤差閾值設為 15 單位。偏移量越小代表球心位於各層正中央，同心度越好，球體飛行軌跡越穩定。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 表面瑕疵 -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">INSPECT 02</span>
+    <span class="sec-title">表面瑕疵檢測</span>
+  </div>
+
+  <div class="info-box blue" style="margin-bottom:1rem">
+    高爾夫球表面為<strong>球面結構</strong>，且有不規則的坑洞（dimple），造成光線反射複雜，難以檢測。採用<strong>暗視野照明</strong>避免反光，利用大量統計實驗確定有效拍攝範圍約30度角。
+  </div>
+
+  <!-- 全球面量測 -->
+  <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.2rem;margin-bottom:1.2rem">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.6rem">// 全球面量測方案</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem">
+      <div style="font-size:.86rem;line-height:1.8;color:var(--dim)">
+        🔄 球面約180度視角，需繞拍6圈（6×30°=180°）才能完整掃描<br>
+        📷 每圈拍攝16張影像，共計<strong style="color:var(--text)">96張影像</strong>合成
+      </div>
+      <div style="font-size:.86rem;line-height:1.8;color:var(--dim)">
+        🔢 影像中每個坑洞被編號（約300個坑洞），確保全部區域均被檢測<br>
+        ⚙️ 旋轉夾具：旋轉高爾夫球實現多角度拍攝
+      </div>
+    </div>
+  </div>
+
+  <!-- 六大瑕疵互動 -->
+  <div class="filter-widget">
+    <div class="aw-title">// 互動示意：點選瑕疵類型，查看特徵說明</div>
+    <div class="filter-btns" id="golfDefectBtns">
+      <button class="f-btn active" data-defect="crack" onclick="setGolfDefect('crack')">針孔裂</button>
+      <button class="f-btn" data-defect="seam" onclick="setGolfDefect('seam')">結合線</button>
+      <button class="f-btn" data-defect="bump" onclick="setGolfDefect('bump')">凹凸</button>
+      <button class="f-btn" data-defect="tear" onclick="setGolfDefect('tear')">拔斷</button>
+      <button class="f-btn" data-defect="double" onclick="setGolfDefect('double')">雙眼皮</button>
+      <button class="f-btn" data-defect="pin" onclick="setGolfDefect('pin')">頂針</button>
+    </div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;margin-top:.8rem">
+      <canvas id="golfDefectCanvas" width="180" height="180"
+        style="border-radius:50%;border:2px solid var(--border);background:#0d1117;flex-shrink:0"></canvas>
+      <div style="flex:1;min-width:200px">
+        <div id="golfDefectName" style="font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:.4rem"></div>
+        <div id="golfDefectDesc" style="font-size:.9rem;line-height:1.82;color:var(--dim);margin-bottom:.7rem"></div>
+        <div id="golfDefectNote" style="background:var(--bg);border-radius:5px;padding:.6rem .9rem;border-left:2px solid var(--accent2);font-size:.85rem;color:var(--text);line-height:1.7"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 檢測機台架構 -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">SYSTEM</span>
+    <span class="sec-title">檢測機台架構</span>
+  </div>
+  <table class="cmp-table" style="margin-bottom:1.2rem">
+    <thead><tr><th>硬體元件</th><th>功能說明</th></tr></thead>
+    <tbody>
+      <tr><td><strong>旋轉夾具</strong></td><td>旋轉高爾夫球，實現多角度拍攝</td></tr>
+      <tr><td><strong>光源與相機</strong></td><td>放置於後方，進行暗場照明與影像拍攝</td></tr>
+      <tr><td><strong>編碼器</strong></td><td>控制旋轉角度與拍攝時機，以精準控制旋轉角度與位置</td></tr>
+      <tr><td><strong>PLC（可程式邏輯控制器）</strong></td><td>控制整個機台運作流程，為工業電腦系統</td></tr>
+      <tr><td><strong>IO 卡</strong></td><td>與電腦溝通，傳輸控制命令及影像資料</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 效益 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div style="background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.3);border-radius:6px;padding:1.1rem">
+      <div style="font-size:.88rem;font-weight:700;color:#4ade80;margin-bottom:.4rem">✅ 檢測效益</div>
+      <div style="font-size:.85rem;line-height:1.8;color:var(--dim)">
+        • 瑕疵檢測速度約 2.3 秒/顆球<br>
+        • 檢出成功率 97.5%，錯誤率 2.5% 在可接受範圍<br>
+        • 自動將 NG（不良品）與 OK（良品）分流
+      </div>
+    </div>
+    <div style="background:rgba(79,195,247,.07);border:1px solid rgba(79,195,247,.3);border-radius:6px;padding:1.1rem">
+      <div style="font-size:.88rem;font-weight:700;color:var(--accent);margin-bottom:.4rem">💰 成本效益</div>
+      <div style="font-size:.85rem;line-height:1.8;color:var(--dim)">
+        • 大幅節省切球、量測的人力與時間<br>
+        • 高精準度且無疲勞，避免人工誤差<br>
+        • 快速且可連續運作 24 小時不間斷
+      </div>
+    </div>
+  </div>
+
+</div><!-- /p-app-golf -->
+
+
 </div>
 </div>
 
@@ -4662,12 +5113,657 @@ function setSIFTStep(idx){
 }
 
 
+// ══════════════════════════════
+// 影像分類 JS
+// ══════════════════════════════
+
+// ── kNN 互動 ──
+const knnTrainA = [{x:55,y:60},{x:70,y:90},{x:45,y:110},{x:80,y:50},{x:60,y:130},{x:40,y:75}];
+const knnTrainB = [{x:150,y:130},{x:165,y:100},{x:145,y:160},{x:175,y:145},{x:160,y:75},{x:180,y:110}];
+let knnTestPt = null;
+let knnK = 3;
+
+function updateKNN(v){
+  knnK = parseInt(v);
+  document.getElementById('knnKval').textContent = 'k = ' + knnK;
+  drawKNNCanvas();
+}
+
+function knnClick(evt){
+  const c = document.getElementById('knnCanvas');
+  const rect = c.getBoundingClientRect();
+  knnTestPt = {
+    x: (evt.clientX - rect.left) * (c.width / rect.width),
+    y: (evt.clientY - rect.top) * (c.height / rect.height)
+  };
+  drawKNNCanvas();
+}
+
+function drawKNNCanvas(){
+  const c = document.getElementById('knnCanvas');
+  if(!c) return;
+  const ctx = c.getContext('2d'), w = c.width, h = c.height;
+  ctx.clearRect(0,0,w,h);
+  // background grid
+  ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1;
+  for(let i=0;i<w;i+=20){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,h);ctx.stroke();}
+  for(let j=0;j<h;j+=20){ctx.beginPath();ctx.moveTo(0,j);ctx.lineTo(w,j);ctx.stroke();}
+
+  // if test point, draw background classification zones
+  if(knnTestPt){
+    // simple pixel-wise classification
+    const imgData = ctx.createImageData(w,h);
+    for(let py=0;py<h;py+=3){
+      for(let px=0;px<w;px+=3){
+        const all = [
+          ...knnTrainA.map(p=>({d:Math.hypot(px-p.x,py-p.y),cls:'A'})),
+          ...knnTrainB.map(p=>({d:Math.hypot(px-p.x,py-p.y),cls:'B'}))
+        ].sort((a,b)=>a.d-b.d).slice(0,knnK);
+        const votes = all.filter(p=>p.cls==='A').length;
+        const isA = votes > knnK/2;
+        for(let dy=0;dy<3;dy++) for(let dx=0;dx<3;dx++){
+          const idx = ((py+dy)*w+(px+dx))*4;
+          imgData.data[idx]   = isA?40:50;
+          imgData.data[idx+1] = isA?80:30;
+          imgData.data[idx+2] = isA?120:40;
+          imgData.data[idx+3] = 60;
+        }
+      }
+    }
+    ctx.putImageData(imgData,0,0);
+  }
+
+  // train points
+  knnTrainA.forEach(p=>{
+    ctx.beginPath();ctx.arc(p.x,p.y,7,0,Math.PI*2);
+    ctx.fillStyle='#4fc3f7';ctx.fill();
+    ctx.strokeStyle='rgba(79,195,247,.4)';ctx.lineWidth=1.5;ctx.stroke();
+  });
+  knnTrainB.forEach(p=>{
+    ctx.beginPath();ctx.arc(p.x,p.y,7,0,Math.PI*2);
+    ctx.fillStyle='#f87171';ctx.fill();
+    ctx.strokeStyle='rgba(248,113,113,.4)';ctx.lineWidth=1.5;ctx.stroke();
+  });
+
+  // test point + kNN result
+  if(knnTestPt){
+    const all = [
+      ...knnTrainA.map(p=>({d:Math.hypot(knnTestPt.x-p.x,knnTestPt.y-p.y),cls:'A',p})),
+      ...knnTrainB.map(p=>({d:Math.hypot(knnTestPt.x-p.x,knnTestPt.y-p.y),cls:'B',p}))
+    ].sort((a,b)=>a.d-b.d).slice(0,knnK);
+
+    // draw lines to k nearest
+    all.forEach(nb=>{
+      ctx.beginPath();ctx.moveTo(knnTestPt.x,knnTestPt.y);ctx.lineTo(nb.p.x,nb.p.y);
+      ctx.strokeStyle='rgba(251,191,36,.4)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+      ctx.stroke();ctx.setLineDash([]);
+    });
+
+    const votesA = all.filter(p=>p.cls==='A').length;
+    const votesB = knnK - votesA;
+    const resultCls = votesA > votesB ? 'A' : 'B';
+    const resultColor = resultCls==='A'?'#4fc3f7':'#f87171';
+
+    ctx.beginPath();ctx.arc(knnTestPt.x,knnTestPt.y,9,0,Math.PI*2);
+    ctx.fillStyle='#fbbf24';ctx.fill();
+    ctx.strokeStyle=resultColor;ctx.lineWidth=3;ctx.stroke();
+
+    document.getElementById('knnResult').innerHTML =
+      `測試點位於 (${Math.round(knnTestPt.x)}, ${Math.round(knnTestPt.y)})<br>` +
+      `最近 ${knnK} 個鄰居：<span style="color:#4fc3f7">A類 ${votesA} 票</span> vs <span style="color:#f87171">B類 ${votesB} 票</span><br>` +
+      `→ 判定為 <strong style="color:${resultColor}">類別 ${resultCls}</strong>`;
+  }
+}
+
+// ── 貝式分類器互動 ──
+function updateBayes(v){
+  const p1 = parseFloat(v);
+  document.getElementById('bayesPriorVal').textContent = p1.toFixed(2);
+  const threshold = 128 + (0.5 - p1) * 60;
+  document.getElementById('bayesDesc').innerHTML =
+    `類別 A 的事前機率 P(w₁) = ${p1.toFixed(2)}，類別 B 的 P(w₂) = ${(1-p1).toFixed(2)}。<br>` +
+    `決策邊界移至特徵值 <strong style="color:var(--accent)">${Math.round(threshold)}</strong>。` +
+    (p1>0.5?'A 類機率較高，邊界向右移（B 類區域縮小）。':'B 類機率較高，邊界向左移（A 類區域縮小）。');
+  drawBayesCanvas(p1);
+}
+
+function drawBayesCanvas(p1){
+  const c = document.getElementById('bayesCanvas');
+  if(!c) return;
+  const ctx = c.getContext('2d'), w = c.width, h = c.height;
+  ctx.clearRect(0,0,w,h);
+  const mu1=80, mu2=160, sigma=30;
+  const threshold = 128 + (0.5 - p1) * 60;
+
+  // Draw distributions
+  const drawGaussian = (mu, sigma, prior, color, fillColor) => {
+    ctx.beginPath();
+    for(let x=0;x<w;x++){
+      const px = x/w*256;
+      const y = prior * Math.exp(-0.5*((px-mu)/sigma)**2) / (sigma*Math.sqrt(2*Math.PI)) * 3000;
+      x===0 ? ctx.moveTo(x, h-20-y) : ctx.lineTo(x, h-20-y);
+    }
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+    ctx.lineTo(w, h-20); ctx.lineTo(0, h-20); ctx.closePath();
+    ctx.fillStyle = fillColor; ctx.fill();
+  };
+
+  drawGaussian(mu1, sigma, p1, '#4fc3f7', 'rgba(79,195,247,.15)');
+  drawGaussian(mu2, sigma, 1-p1, '#f87171', 'rgba(248,113,113,.15)');
+
+  // Decision boundary
+  const bx = threshold/256*w;
+  ctx.strokeStyle='#fbbf24'; ctx.lineWidth=2; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(bx,0); ctx.lineTo(bx,h-20); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='rgba(251,191,36,.8)'; ctx.font='9px Share Tech Mono,monospace';
+  ctx.textAlign='center';
+  ctx.fillText('決策邊界', bx, 12);
+
+  // Labels
+  ctx.font='10px Share Tech Mono,monospace'; ctx.textAlign='center';
+  ctx.fillStyle='#4fc3f7'; ctx.fillText('類別 A', mu1/256*w, h-5);
+  ctx.fillStyle='#f87171'; ctx.fillText('類別 B', mu2/256*w, h-5);
+
+  // Axes
+  ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,h-20); ctx.lineTo(w,h-20); ctx.stroke();
+}
+
+// ── SVM 互動 ──
+const svmKernelData = {
+  linear: {
+    name:'線性核（Linear Kernel）',
+    formula:'K(x, y) = x · y',
+    desc:'無映射，直接在原始空間找線性超平面。適合線性可分的資料——特徵空間中兩類可用一條直線（或超平面）分開。計算最快，解釋性最佳。',
+  },
+  poly: {
+    name:'多項式核（Polynomial Kernel）',
+    formula:'K(x, y) = (x · y + c)ᵈ',
+    desc:'映射到多項式空間，適合有複雜多項式邊界的資料。d 為次數，決定邊界彎曲程度。d=2 可處理二次曲線邊界。',
+  },
+  rbf: {
+    name:'高斯核（RBF Kernel）',
+    formula:'K(x, y) = exp(−γ|x − y|²)',
+    desc:'映射到無限維空間，是最常用的非線性核函數。γ 控制影響範圍：γ 大→邊界複雜（易過擬合）；γ 小→邊界平滑。適合大多數非線性問題。',
+  },
+};
+
+function setSVMKernel(type){
+  document.querySelectorAll('[data-svm]').forEach(b=>
+    b.classList.toggle('active', b.getAttribute('data-svm')===type)
+  );
+  const info = svmKernelData[type];
+  document.getElementById('svmKernelName').textContent = info.name;
+  document.getElementById('svmKernelFormula').textContent = info.formula;
+  document.getElementById('svmKernelDesc').textContent = info.desc;
+  drawSVMCanvas(type);
+}
+
+function drawSVMCanvas(type){
+  const c = document.getElementById('svmCanvas');
+  if(!c) return;
+  const ctx = c.getContext('2d'), w = c.width, h = c.height;
+  ctx.clearRect(0,0,w,h);
+
+  // background grid
+  ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=1;
+  for(let i=0;i<w;i+=20){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,h);ctx.stroke();}
+  for(let j=0;j<h;j+=20){ctx.beginPath();ctx.moveTo(0,j);ctx.lineTo(w,j);ctx.stroke();}
+
+  // data points
+  const ptA=[{x:60,y:60},{x:75,y:90},{x:50,y:120},{x:90,y:70},{x:65,y:145},{x:40,y:85}];
+  const ptB=[{x:150,y:80},{x:165,y:110},{x:145,y:140},{x:175,y:65},{x:160,y:155},{x:185,y:95}];
+
+  // Decision boundary by type
+  ctx.strokeStyle='#a78bfa'; ctx.lineWidth=2.5;
+  if(type==='linear'){
+    ctx.beginPath(); ctx.moveTo(115,20); ctx.lineTo(115,h-20); ctx.stroke();
+    // margin lines
+    ctx.strokeStyle='rgba(167,139,250,.35)'; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(98,20); ctx.lineTo(98,h-20); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(132,20); ctx.lineTo(132,h-20); ctx.stroke();
+    ctx.setLineDash([]);
+    // highlight support vectors
+    [{x:90,y:70},{x:75,y:90}].forEach(p=>{
+      ctx.beginPath();ctx.arc(p.x,p.y,11,0,Math.PI*2);
+      ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.stroke();
+    });
+    [{x:150,y:80},{x:145,y:140}].forEach(p=>{
+      ctx.beginPath();ctx.arc(p.x,p.y,11,0,Math.PI*2);
+      ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.stroke();
+    });
+    ctx.fillStyle='rgba(251,191,36,.6)';ctx.font='8px Share Tech Mono,monospace';
+    ctx.textAlign='center';ctx.fillText('margin',115,15);
+  } else if(type==='poly'){
+    ctx.beginPath();
+    for(let y=0;y<h;y++){
+      const x = 110 + 30*Math.sin(y/h*Math.PI*1.5 - 0.5);
+      y===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  } else {
+    // RBF: curved boundary around cluster B
+    ctx.beginPath();
+    for(let a=0;a<=Math.PI*2;a+=0.05){
+      const rx=55, ry=70;
+      const x=162+rx*Math.cos(a), y=105+ry*Math.sin(a);
+      a===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.closePath(); ctx.stroke();
+  }
+
+  // draw points
+  ptA.forEach(p=>{
+    ctx.beginPath();ctx.arc(p.x,p.y,6,0,Math.PI*2);
+    ctx.fillStyle='#4fc3f7';ctx.fill();
+  });
+  ptB.forEach(p=>{
+    ctx.beginPath();ctx.arc(p.x,p.y,6,0,Math.PI*2);
+    ctx.fillStyle='#f87171';ctx.fill();
+  });
+
+  // labels
+  ctx.fillStyle='rgba(79,195,247,.6)';ctx.font='10px Share Tech Mono,monospace';
+  ctx.textAlign='left';ctx.fillText('類別 A',15,h-8);
+  ctx.fillStyle='rgba(248,113,113,.6)';
+  ctx.textAlign='right';ctx.fillText('類別 B',w-10,h-8);
+}
+
+// ══════════════════════════════
+// 高爾夫球 AOI JS
+// ══════════════════════════════
+
+// ── 同心度計算互動 ──
+function updateGolf(){
+  const A = parseInt(document.getElementById('golfA').value);
+  const B = parseInt(document.getElementById('golfB').value);
+  document.getElementById('golfAval').textContent = A;
+  document.getElementById('golfBval').textContent = B;
+  const offset = Math.sqrt(A*A + B*B);
+  document.getElementById('golfOffset').textContent = offset.toFixed(2);
+  const judge = document.getElementById('golfJudge');
+  const threshold = 15;
+  if(offset <= threshold){
+    judge.style.background = 'rgba(74,222,128,.08)';
+    judge.style.border = '1px solid rgba(74,222,128,.3)';
+    judge.style.color = '#4ade80';
+    judge.textContent = '✅ OK — 偏移量在容許範圍內，同心度合格';
+  } else {
+    judge.style.background = 'rgba(248,113,113,.08)';
+    judge.style.border = '1px solid rgba(248,113,113,.3)';
+    judge.style.color = '#f87171';
+    judge.textContent = '❌ NG — 偏移量超過閾值，同心度不合格';
+  }
+  drawGolfCanvas(A, B);
+}
+
+function drawGolfCanvas(A, B){
+  const c = document.getElementById('golfCanvas');
+  if(!c) return;
+  const ctx = c.getContext('2d'), w = c.width, h = c.height;
+  ctx.clearRect(0,0,w,h);
+  const cx = w/2, cy = h/2;
+  // outer ball
+  ctx.beginPath(); ctx.arc(cx,cy,90,0,Math.PI*2);
+  ctx.fillStyle='rgba(60,80,100,.4)';ctx.fill();
+  ctx.strokeStyle='rgba(79,195,247,.4)';ctx.lineWidth=2;ctx.stroke();
+  // layer 2
+  ctx.beginPath(); ctx.arc(cx,cy,65,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,229,204,.35)';ctx.lineWidth=1.5;ctx.stroke();
+  // core (shifted by A, B)
+  const scale = 1.5;
+  const offX = A * scale, offY = B * scale;
+  ctx.beginPath(); ctx.arc(cx+offX,cy+offY,35,0,Math.PI*2);
+  ctx.fillStyle='rgba(79,195,247,.2)';ctx.fill();
+  ctx.strokeStyle='#4fc3f7';ctx.lineWidth=2;ctx.stroke();
+  // ideal center
+  ctx.beginPath(); ctx.arc(cx,cy,3,0,Math.PI*2);
+  ctx.fillStyle='#fbbf24';ctx.fill();
+  // actual center
+  ctx.beginPath(); ctx.arc(cx+offX,cy+offY,3,0,Math.PI*2);
+  ctx.fillStyle='#f87171';ctx.fill();
+  // offset line
+  if(A!==0||B!==0){
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+offX,cy+offY);
+    ctx.strokeStyle='rgba(248,113,113,.7)'; ctx.lineWidth=1.5; ctx.setLineDash([3,2]);
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+  // legend
+  ctx.font='9px Share Tech Mono,monospace'; ctx.textAlign='left';
+  ctx.fillStyle='#fbbf24'; ctx.fillText('● 理想中心',8,h-22);
+  ctx.fillStyle='#f87171'; ctx.fillText('● 實際球心',8,h-10);
+}
+
+// ── 高爾夫球瑕疵互動 ──
+const golfDefects = {
+  crack: {
+    name:'針孔裂（Pinhole Crack）',
+    desc:'球面出現小孔狀裂縫，為材料結合處的線狀裂痕。在影像中呈現為細小的暗線或孔洞，是最常見的瑕疵類型。',
+    note:'✓ 暗視野照明下，裂縫散射光線，呈現亮線，對比度高，易於辨識。',
+    drawFn: (ctx,cx,cy,r) => {
+      // crack lines
+      for(let i=0;i<4;i++){
+        const a = (i/4)*Math.PI*2 + 0.3;
+        const x1=cx+r*0.3*Math.cos(a), y1=cy+r*0.3*Math.sin(a);
+        ctx.beginPath();ctx.moveTo(x1,y1);
+        ctx.lineTo(x1+15*Math.cos(a+0.5),y1+15*Math.sin(a+0.5));
+        ctx.strokeStyle='#f87171';ctx.lineWidth=1.5;ctx.stroke();
+        ctx.beginPath();ctx.arc(x1,y1,2,0,Math.PI*2);
+        ctx.fillStyle='#f87171';ctx.fill();
+      }
+    }
+  },
+  seam: {
+    name:'結合線（Seam Line）',
+    desc:'材料結合處的線狀痕跡，在球面呈現為一條明顯的凸起或凹陷線條，是製造過程中兩個半球接合不完整造成的。',
+    note:'✓ 條形光源從側面打光，結合線的高度差產生陰影，對比明顯。',
+    drawFn: (ctx,cx,cy,r) => {
+      ctx.beginPath();
+      ctx.moveTo(cx-r*0.8, cy);
+      ctx.bezierCurveTo(cx-r*0.4,cy-8, cx+r*0.4,cy+8, cx+r*0.8,cy);
+      ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;ctx.stroke();
+    }
+  },
+  bump: {
+    name:'凹凸（Bump/Dent）',
+    desc:'表面不平整，有凹陷或凸起。影響球體飛行時的空氣動力學特性，造成軌跡不穩定。',
+    note:'✓ 斜角暗視野打光，凹凸區域產生不均勻陰影，與正常 dimple 形成對比。',
+    drawFn: (ctx,cx,cy,r) => {
+      // bump
+      const grad=ctx.createRadialGradient(cx-20,cy-20,0,cx-20,cy-20,25);
+      grad.addColorStop(0,'rgba(255,255,255,.3)');
+      grad.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.beginPath();ctx.arc(cx-20,cy-20,25,0,Math.PI*2);
+      ctx.fillStyle=grad;ctx.fill();
+      // dent
+      const grad2=ctx.createRadialGradient(cx+25,cy+25,0,cx+25,cy+25,20);
+      grad2.addColorStop(0,'rgba(0,0,0,.5)');
+      grad2.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.beginPath();ctx.arc(cx+25,cy+25,20,0,Math.PI*2);
+      ctx.fillStyle=grad2;ctx.fill();
+    }
+  },
+  tear: {
+    name:'拔斷（Tear）',
+    desc:'材料破裂或斷裂，表面有明顯的撕裂痕跡。通常在射出成形時因材料張力過大或模具問題造成。',
+    note:'⚠️ 形狀不規則，需特徵分析區分，判別難度較高。',
+    drawFn: (ctx,cx,cy,r) => {
+      ctx.beginPath();
+      ctx.moveTo(cx-10,cy-30);
+      ctx.lineTo(cx+5,cy-10);
+      ctx.lineTo(cx-5,cy);
+      ctx.lineTo(cx+15,cy+25);
+      ctx.lineTo(cx+5,cy+30);
+      ctx.lineTo(cx-8,cy+5);
+      ctx.lineTo(cx+2,cy-8);
+      ctx.lineTo(cx-12,cy-28);
+      ctx.closePath();
+      ctx.fillStyle='rgba(248,113,113,.4)';ctx.fill();
+      ctx.strokeStyle='#f87171';ctx.lineWidth=1.5;ctx.stroke();
+    }
+  },
+  double: {
+    name:'雙眼皮（Double Skin）',
+    desc:'看似有兩層非瑕疵的表面皮膚狀的瑕疵，常出現在射出成形時材料流動不均勻的位置，外觀類似正常 dimple 但排列異常。',
+    note:'⚠️ 與正常表面相似，需用特徵分析區分，為頂針區域附近的「頂針區」來區分。',
+    drawFn: (ctx,cx,cy,r) => {
+      for(let i=0;i<2;i++){
+        const ox = i===0 ? -15 : 15;
+        ctx.beginPath();ctx.ellipse(cx+ox,cy,20,12,0,0,Math.PI*2);
+        ctx.strokeStyle='rgba(0,229,204,.7)';ctx.lineWidth=2;ctx.stroke();
+        ctx.fillStyle='rgba(0,229,204,.1)';ctx.fill();
+      }
+      ctx.beginPath();ctx.ellipse(cx,cy,35,15,0,0,Math.PI*2);
+      ctx.strokeStyle='rgba(0,229,204,.3)';ctx.lineWidth=1;ctx.setLineDash([3,2]);
+      ctx.stroke();ctx.setLineDash([]);
+    }
+  },
+  pin: {
+    name:'頂針（Pin Mark）',
+    desc:'看似非瑕疵的表面特徵，但需要判別難度高。頂針痕跡出現在模具頂針接觸的位置，呈現圓形壓痕，需用特徵分析來區分。',
+    note:'⚠️ 難以目視判斷，需利用瑕疵的灰階特徵及幾何形狀特徵進行判定。',
+    drawFn: (ctx,cx,cy,r) => {
+      ctx.beginPath();ctx.arc(cx,cy,18,0,Math.PI*2);
+      ctx.fillStyle='rgba(167,139,250,.2)';ctx.fill();
+      ctx.strokeStyle='#a78bfa';ctx.lineWidth=2;ctx.stroke();
+      ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);
+      ctx.fillStyle='rgba(167,139,250,.6)';ctx.fill();
+      // radial marks
+      for(let i=0;i<8;i++){
+        const a=i/8*Math.PI*2;
+        ctx.beginPath();
+        ctx.moveTo(cx+8*Math.cos(a),cy+8*Math.sin(a));
+        ctx.lineTo(cx+16*Math.cos(a),cy+16*Math.sin(a));
+        ctx.strokeStyle='rgba(167,139,250,.4)';ctx.lineWidth=1;ctx.stroke();
+      }
+    }
+  },
+};
+
+function setGolfDefect(type){
+  document.querySelectorAll('[data-defect]').forEach(b=>
+    b.classList.toggle('active', b.getAttribute('data-defect')===type)
+  );
+  const info = golfDefects[type];
+  document.getElementById('golfDefectName').textContent = info.name;
+  document.getElementById('golfDefectDesc').textContent = info.desc;
+  document.getElementById('golfDefectNote').textContent = info.note;
+  drawGolfDefectCanvas(type);
+}
+
+function drawGolfDefectCanvas(type){
+  const c = document.getElementById('golfDefectCanvas');
+  if(!c) return;
+  const ctx = c.getContext('2d'), w = c.width, h = c.height;
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2, cy=h/2, r=82;
+  // ball background
+  const grad = ctx.createRadialGradient(cx-20,cy-20,10,cx,cy,r);
+  grad.addColorStop(0,'rgba(60,80,100,.8)');
+  grad.addColorStop(1,'rgba(20,30,45,.9)');
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.fillStyle=grad;ctx.fill();
+  // dimples
+  for(let i=0;i<18;i++){
+    const a=i/18*Math.PI*2;
+    const dr=45+20*(i%3);
+    const dx=cx+dr*Math.cos(a), dy=cy+dr*Math.sin(a);
+    ctx.beginPath();ctx.arc(dx,dy,6,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,0,0,.4)';ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=1;ctx.stroke();
+  }
+  // ball outline
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.strokeStyle='rgba(79,195,247,.3)';ctx.lineWidth=1.5;ctx.stroke();
+  // defect
+  ctx.save();
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.clip();
+  golfDefects[type].drawFn(ctx,cx,cy,r);
+  ctx.restore();
+}
+
+// ── 分類+高爾夫球初始化 ──
+function initClassifySection(){
+  drawKNNCanvas();
+  updateBayes(0.5);
+  setSVMKernel('linear');
+}
+
+function initGolfSection(){
+  updateGolf();
+  setGolfDefect('crack');
+}
+
+
+// ── LED 晶圓像素解析度計算 ──
+function calcLED(){
+  const fov = parseFloat(document.getElementById('ledFOV').value) || 30;
+  const tol = parseFloat(document.getElementById('ledTol').value) || 4;
+  const pr = tol / 4; // μm
+  const px = Math.ceil((fov * 1000) / pr); // convert mm to μm
+  let cam;
+  if(px <= 2048) cam = '2K 面掃描';
+  else if(px <= 4096) cam = '4K 面掃描';
+  else if(px <= 8192) cam = '8K Line Scan';
+  else if(px <= 16384) cam = '16K Line Scan';
+  else cam = '32K Line Scan';
+  document.getElementById('ledPR').textContent = pr.toFixed(2) + ' μm';
+  document.getElementById('ledPX').textContent = px.toLocaleString() + ' px';
+  document.getElementById('ledCAM').textContent = cam;
+}
+
+// ── LED 晶圓瑕疵互動 ──
+const ledDefects = {
+  scratch: {
+    name: '刮傷（Scratch）',
+    desc: '晶圓表面出現線狀刮痕，通常在搬運或切割過程中產生。在影像中呈現為細長的亮線（同軸光照射下反射角度不同）。',
+    note: '✓ 同軸光源下，刮痕反射方向異常，呈現高亮線條，用 Sobel 邊緣偵測可有效找出。',
+    drawFn: (ctx, w, h) => {
+      // wafer background
+      const g = ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,80);
+      g.addColorStop(0,'rgba(60,90,120,.5)');g.addColorStop(1,'rgba(20,35,50,.8)');
+      ctx.beginPath();ctx.arc(w/2,h/2,80,0,Math.PI*2);
+      ctx.fillStyle=g;ctx.fill();
+      // scratch lines
+      ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(40,60);ctx.lineTo(140,90);ctx.stroke();
+      ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(60,100);ctx.lineTo(130,125);ctx.stroke();
+      // wafer outline
+      ctx.beginPath();ctx.arc(w/2,h/2,80,0,Math.PI*2);
+      ctx.strokeStyle='rgba(79,195,247,.3)';ctx.lineWidth=1.5;ctx.stroke();
+    }
+  },
+  particle: {
+    name: '異物粒子（Particle）',
+    desc: '晶圓表面附著的灰塵或異物粒子。即使是微米級的粒子也可能造成後續製程的汙染或短路，必須嚴格管控。',
+    note: '✓ 明視野照明下，粒子呈現暗點；暗視野照明下呈亮點。形態學中的斷開運算可有效去除雜訊與偵測粒子。',
+    drawFn: (ctx, w, h) => {
+      const g = ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,80);
+      g.addColorStop(0,'rgba(60,90,120,.5)');g.addColorStop(1,'rgba(20,35,50,.8)');
+      ctx.beginPath();ctx.arc(w/2,h/2,80,0,Math.PI*2);
+      ctx.fillStyle=g;ctx.fill();
+      // particles
+      const pts=[{x:70,y:60,r:4},{x:110,y:90,r:6},{x:85,y:120,r:3},{x:130,y:70,r:5},{x:55,y:100,r:2}];
+      pts.forEach(p=>{
+        ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle='rgba(248,113,113,.8)';ctx.fill();
+        ctx.strokeStyle='rgba(248,113,113,.4)';ctx.lineWidth=1;ctx.stroke();
+      });
+      ctx.beginPath();ctx.arc(w/2,h/2,80,0,Math.PI*2);
+      ctx.strokeStyle='rgba(79,195,247,.3)';ctx.lineWidth=1.5;ctx.stroke();
+    }
+  },
+  crack: {
+    name: '裂痕（Crack）',
+    desc: '晶圓內部或表面的裂縫，可能在切割或搬運時產生。裂痕會導致晶片結構性破壞，是最嚴重的瑕疵類型。',
+    note: '⚠️ 裂痕有時延伸至晶圓內部，表面不易發現。X 光或紅外線透射成像可偵測內部裂痕。',
+    drawFn: (ctx, w, h) => {
+      const g = ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,80);
+      g.addColorStop(0,'rgba(60,90,120,.5)');g.addColorStop(1,'rgba(20,35,50,.8)');
+      ctx.beginPath();ctx.arc(w/2,h/2,80,0,Math.PI*2);
+      ctx.fillStyle=g;ctx.fill();
+      // crack
+      ctx.strokeStyle='rgba(248,113,113,.9)';ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(75,50);ctx.lineTo(95,75);ctx.lineTo(88,95);
+      ctx.lineTo(105,120);ctx.lineTo(115,140);
+      ctx.stroke();
+      // glow
+      ctx.shadowColor='#f87171';ctx.shadowBlur=6;
+      ctx.strokeStyle='rgba(248,113,113,.4)';ctx.lineWidth=4;
+      ctx.beginPath();
+      ctx.moveTo(75,50);ctx.lineTo(95,75);ctx.lineTo(88,95);
+      ctx.lineTo(105,120);ctx.lineTo(115,140);
+      ctx.stroke();ctx.shadowBlur=0;
+      ctx.beginPath();ctx.arc(w/2,h/2,80,0,Math.PI*2);
+      ctx.strokeStyle='rgba(79,195,247,.3)';ctx.lineWidth=1.5;ctx.stroke();
+    }
+  },
+  pit: {
+    name: '凹坑（Pit）',
+    desc: '晶圓表面的微小凹陷，通常在外延生長過程中形成。凹坑會影響發光層結構的完整性，降低 LED 發光效率。',
+    note: '✓ 同軸光照射下，凹坑底部反射角度不同，呈現暗點或亮環。Otsu 門檻化配合形態學可有效分割。',
+    drawFn: (ctx, w, h) => {
+      const g = ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,80);
+      g.addColorStop(0,'rgba(60,90,120,.5)');g.addColorStop(1,'rgba(20,35,50,.8)');
+      ctx.beginPath();ctx.arc(w/2,h/2,80,0,Math.PI*2);
+      ctx.fillStyle=g;ctx.fill();
+      // pits
+      const pits=[{x:75,y:70},{x:105,y:95},{x:85,y:120},{x:120,y:65}];
+      pits.forEach(p=>{
+        const pg=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,10);
+        pg.addColorStop(0,'rgba(0,0,0,.7)');
+        pg.addColorStop(0.6,'rgba(0,0,0,.3)');
+        pg.addColorStop(1,'rgba(255,255,255,.15)');
+        ctx.beginPath();ctx.arc(p.x,p.y,10,0,Math.PI*2);
+        ctx.fillStyle=pg;ctx.fill();
+      });
+      ctx.beginPath();ctx.arc(w/2,h/2,80,0,Math.PI*2);
+      ctx.strokeStyle='rgba(79,195,247,.3)';ctx.lineWidth=1.5;ctx.stroke();
+    }
+  },
+  edge: {
+    name: '邊緣缺口（Edge Chip）',
+    desc: '晶圓邊緣的缺口或崩裂，在切割或搬運過程中產生。邊緣缺口可能擴展為裂痕，導致整片晶圓報廢。',
+    note: '✓ 以背光板（Back Light）讓晶圓呈現剪影，邊緣輪廓最清晰，缺口一目了然。結合鏈碼描述輪廓可量化缺口大小。',
+    drawFn: (ctx, w, h) => {
+      // backlight style: bright background, dark wafer
+      ctx.fillStyle='rgba(40,60,80,.3)';ctx.fillRect(0,0,w,h);
+      ctx.beginPath();
+      // wafer with edge chip
+      const cx=w/2,cy=h/2,r=78;
+      ctx.moveTo(cx+r,cy);
+      for(let a=0;a<=Math.PI*2;a+=0.05){
+        const isChip = a>0.2&&a<0.55;
+        const rr = isChip ? r-15-Math.sin((a-0.2)/(0.35)*Math.PI)*8 : r;
+        ctx.lineTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a));
+      }
+      ctx.closePath();
+      ctx.fillStyle='rgba(30,50,70,.9)';ctx.fill();
+      ctx.strokeStyle='#4fc3f7';ctx.lineWidth=2;ctx.stroke();
+      // highlight chip area
+      ctx.beginPath();
+      for(let a=0.2;a<=0.55;a+=0.02){
+        const rr=r-15-Math.sin((a-0.2)/(0.35)*Math.PI)*8;
+        a===0.2?ctx.moveTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a)):ctx.lineTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a));
+      }
+      ctx.strokeStyle='#f87171';ctx.lineWidth=2.5;ctx.stroke();
+    }
+  },
+};
+
+function setLEDDefect(type){
+  document.querySelectorAll('[data-led]').forEach(b=>
+    b.classList.toggle('active', b.getAttribute('data-led')===type)
+  );
+  const info = ledDefects[type];
+  document.getElementById('ledDefectName').textContent = info.name;
+  document.getElementById('ledDefectDesc').textContent = info.desc;
+  document.getElementById('ledDefectNote').textContent = info.note;
+  drawLEDDefectCanvas(type);
+}
+
+function drawLEDDefectCanvas(type){
+  const c = document.getElementById('ledDefectCanvas');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  ledDefects[type].drawFn(ctx, c.width, c.height);
+}
+
+function initLEDSection(){
+  calcLED();
+  setLEDDefect('scratch');
+}
 
 // 影像匹配初始化（加入到 setTimeout 最末）
 initMatchDemo();
 setPyramidLevel(3);
 setSIFTStep(0);
-
+initClassifySection();
+initGolfSection();
 
 // ══════════════════════════════
 // INIT ALL
@@ -4696,6 +5792,8 @@ setTimeout(()=>{
   initMorph2Demo();
   initMatchDemo();
   initFeaturesSection();
+  calcLED();
+  initLEDSection();
 }, 400);
 </script>
 </body>
