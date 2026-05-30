@@ -2815,6 +2815,9 @@ canvas#apCanvas{border-radius:50%}
   <div class="mtabs">
     <button class="mtab active" onclick="swTab(event,'app-led')">💡 LED 晶圓 AOI</button>
     <button class="mtab" onclick="swTab(event,'app-golf')">⛳ 高爾夫球 AOI</button>
+    <button class="mtab" onclick="swTab(event,'app-slider')">⚙️ 滑塊量測</button>
+    <button class="mtab" onclick="swTab(event,'app-headlight')">💡 車燈量測</button>
+    <button class="mtab" onclick="swTab(event,'app-encoder')">🔄 編碼器校正</button>
   </div>
 
   <!-- ── LED 晶圓 AOI ── -->
@@ -3185,6 +3188,497 @@ canvas#apCanvas{border-radius:50%}
   </div>
 
 </div><!-- /p-app-golf -->
+
+<!-- ── 滑塊量測 ── -->
+<div class="mpanel" id="p-app-slider">
+
+  <div class="thero">
+    <div>
+      <div class="thl">// SLIDER MEASUREMENT</div>
+      <div class="tht">滑塊<br>孔徑量測系統</div>
+      <div class="thd">滑塊為精密機構零件，廣泛應用於自動化設備中承載重物並沿軌道滑動。其多個孔徑的尺寸精度直接影響機構功能，AOI 系統需達到 20μm 量測精度。</div>
+      <div class="srow">
+        <div class="si"><span class="sn">20μm</span><span class="sl">量測精度需求</span></div>
+        <div class="si"><span class="sn">5μm</span><span class="sl">系統解析度</span></div>
+        <div class="si"><span class="sn">4×</span><span class="sl">四方向拍攝定位</span></div>
+      </div>
+    </div>
+    <div class="thvis">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--accent2);letter-spacing:.15em;margin-bottom:.6rem">// 四種孔徑類型</div>
+      <div class="vc vc-a"><div class="vcl" style="color:var(--accent)">回流孔</div><div class="vct">滾珠循環通道</div><div class="vcd">滑塊內部讓滾珠（珠子）固定並通過的孔洞，量測重點為直徑精度與孔中心位置。</div></div>
+      <div class="vc vc-b"><div class="vcl" style="color:var(--accent2)">定位孔 / 導軌孔</div><div class="vct">位置與半徑量測</div><div class="vcd">用於定位滑塊位置及讓滾珠中滾珠運行的孔洞，需要完整圓弧拼合才能量測。</div></div>
+      <div class="vc vc-c"><div class="vcl" style="color:#90aabf">螺絲孔</div><div class="vct">深度量測</div><div class="vcd">用於固定螺絲的孔洞，需確認是否完全打穿，並量測深度確保鎖固強度。</div></div>
+    </div>
+  </div>
+
+  <!-- 滑塊類型 -->
+  <div class="ptag" style="margin-top:1.5rem">// 滑塊類型與特點</div>
+  <table class="cmp-table" style="margin:1rem 0 1.5rem">
+    <thead><tr><th>類型</th><th>移動方向</th><th>結構特點</th></tr></thead>
+    <tbody>
+      <tr><td><strong>單軸滑塊</strong></td><td>單方向移動</td><td>一條滑軌加一個滑塊，結構最簡單</td></tr>
+      <tr><td><strong>二軸滑塊</strong></td><td>兩方向移動（XY 軸）</td><td>兩組滑軌滑塊架構（上下疊加），可平面移動</td></tr>
+      <tr><td><strong>三軸滑塊</strong></td><td>三方向移動（XYZ 軸）</td><td>疊加三組滑塊滑軌，精度更高，承重更大</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 量測精度說明 -->
+  <div class="sec-header">
+    <span class="sec-num">SPEC</span>
+    <span class="sec-title">量測精度要求與系統設計</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+    <div style="background:var(--bg-light);border:1px solid rgba(79,195,247,.3);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent);margin-bottom:.6rem">// 精度要求</div>
+      <div style="font-size:.85rem;line-height:1.82;color:var(--dim)">
+        • 滑塊尺寸的量測精度需求約為 <strong style="color:var(--text)">20μm</strong><br>
+        • 系統解析度需達 <strong style="color:var(--text)">5μm</strong> 級別<br>
+        • 影像處理與機械系統必須相當穩定<br>
+        • 三軸移動相機系統（XY 線性馬達 + Z 螺桿），龍門架構
+      </div>
+    </div>
+    <div style="background:var(--bg-light);border:1px solid rgba(0,229,204,.3);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.6rem">// 機構設計原則</div>
+      <div style="font-size:.85rem;line-height:1.82;color:var(--dim)">
+        • <strong style="color:var(--text)">相機移動</strong>：滑塊本身重量大，改為相機在三軸（XYZ）方向移動拍攝<br>
+        • X、Y 軸採用<strong style="color:var(--text)">線性馬達</strong>推動，精度可達微米級<br>
+        • Z 軸採用螺桿調整相機高以達成<strong style="color:var(--text)">自動對焦</strong><br>
+        • 龍門架構：整體架構形似門框，穩固且能精確移動相機
+      </div>
+    </div>
+  </div>
+
+  <!-- 自動對焦說明 -->
+  <div class="dyk">
+    <div class="dyk-icon">🔍</div>
+    <div><div class="dyk-label">// 自動對焦技術</div><div class="dyk-text">與手持相機類似，透過 Z 軸上下移動整個相機，尋找像素變異數最小（影像最清晰）的位置，固定該位置後完成對焦。對焦位置確保影像清晰度達到量測要求，避免因模糊導致尺寸量測誤差。</div></div>
+  </div>
+
+  <!-- 孔徑量測方法互動 -->
+  <div class="sec-header" style="margin-top:1.5rem">
+    <span class="sec-num">METHOD</span>
+    <span class="sec-title">孔徑量測：四方向拍攝定位法</span>
+  </div>
+
+  <div class="filter-widget">
+    <div class="aw-title">// 互動示意：切換拍攝方向，觀察中心點定位過程</div>
+    <div class="filter-btns" id="sliderDirBtns">
+      <button class="f-btn active" data-sdir="all" onclick="setSliderDir('all')">完整流程</button>
+      <button class="f-btn" data-sdir="lr" onclick="setSliderDir('lr')">左右拍攝（X 中心）</button>
+      <button class="f-btn" data-sdir="tb" onclick="setSliderDir('tb')">上下拍攝（Y 中心）</button>
+      <button class="f-btn" data-sdir="arc" onclick="setSliderDir('arc')">圓弧拼合</button>
+    </div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;margin-top:.8rem">
+      <canvas id="sliderCanvas" width="220" height="220"
+        style="border-radius:6px;border:1px solid var(--border);background:#0d1117;flex-shrink:0"></canvas>
+      <div style="flex:1;min-width:180px">
+        <div id="sliderDirName" style="font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:.4rem"></div>
+        <div id="sliderDirDesc" style="font-size:.9rem;line-height:1.82;color:var(--dim);margin-bottom:.7rem"></div>
+        <div style="background:var(--bg);border-radius:5px;padding:.7rem 1rem;border-left:2px solid var(--accent2);font-size:.84rem;color:var(--text);line-height:1.7">
+          <strong>中心點計算：</strong><br>
+          X 中心 = (左邊緣 + 右邊緣) ÷ 2<br>
+          Y 中心 = (上邊緣 + 下邊緣) ÷ 2
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 半徑與圓弧拼合 -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">METHOD</span>
+    <span class="sec-title">半徑與圓弧拼合（以導軌孔為例）</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem">
+    <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.6rem">// 問題：視野不夠大</div>
+      <p style="font-size:.86rem;line-height:1.75;color:var(--dim)">導軌孔（FOV 視野範圍）很大，無法一次拍攝整個圓弧，需分多張影像拍攝（約3張）並進行<strong style="color:var(--text)">影像縫合（Image Stitching）</strong>。</p>
+    </div>
+    <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.6rem">// 解法：曲線擬合</div>
+      <p style="font-size:.86rem;line-height:1.75;color:var(--dim)">將多張影像拼接成完整圓弧，再進行<strong style="color:var(--text)">曲線擬合（Curve Fitting）</strong>求出準確圓心與半徑。小孔徑可用單張影像直接進行圓弧擬合。</p>
+    </div>
+  </div>
+
+  <!-- 量測流程互動 -->
+  <div class="filter-widget">
+    <div class="aw-title">// 互動示意：完整量測流程步驟</div>
+    <div class="proc-pipeline" id="sliderPipeline">
+      <div class="proc-step active" onclick="setSliderStep(0)">
+        <div class="proc-sn">STEP 01</div>
+        <div class="proc-st">自動對焦</div>
+        <div class="proc-sb">Z 軸移動相機至最佳對焦點</div>
+      </div>
+      <div class="proc-step" onclick="setSliderStep(1)">
+        <div class="proc-sn">STEP 02</div>
+        <div class="proc-st">孔徑拍攝</div>
+        <div class="proc-sb">依序移動相機至各孔位置拍攝</div>
+      </div>
+      <div class="proc-step" onclick="setSliderStep(2)">
+        <div class="proc-sn">STEP 03</div>
+        <div class="proc-st">影像處理</div>
+        <div class="proc-sb">邊緣偵測，計算中心點與半徑</div>
+      </div>
+      <div class="proc-step" onclick="setSliderStep(3)">
+        <div class="proc-sn">STEP 04</div>
+        <div class="proc-st">數據判斷</div>
+        <div class="proc-sb">對比預設標準，判斷尺寸是否合格</div>
+      </div>
+      <div class="proc-step" onclick="setSliderStep(4)">
+        <div class="proc-sn">STEP 05</div>
+        <div class="proc-st">重複量測</div>
+        <div class="proc-sb">依滑塊孔洞數量逐一完成全部量測</div>
+      </div>
+    </div>
+    <div id="sliderStepDetail" style="background:var(--bg-light);border:1px solid var(--border);border-radius:0 0 6px 6px;padding:1.2rem">
+      <div id="sliderStepTitle" style="font-size:.95rem;font-weight:700;color:var(--accent);margin-bottom:.4rem"></div>
+      <div id="sliderStepDesc" style="font-size:.9rem;line-height:1.82;color:var(--dim)"></div>
+    </div>
+  </div>
+
+  <!-- 重點整理表 -->
+  <div class="sec-header" style="margin-top:1.5rem">
+    <span class="sec-num">SUMMARY</span>
+    <span class="sec-title">重點整理</span>
+  </div>
+  <table class="cmp-table">
+    <thead><tr><th>主題</th><th>重點說明</th></tr></thead>
+    <tbody>
+      <tr><td><strong>滑塊用途</strong></td><td>承載重物沿軌道滑動，摩擦力小，廣泛應用於自動化設備</td></tr>
+      <tr><td><strong>量測部位</strong></td><td>回流孔、定位孔、導軌孔、螺絲孔、外輪廓尺寸</td></tr>
+      <tr><td><strong>精度要求</strong></td><td>20μm，相機解析度需達 5μm，機構與光學必須穩定</td></tr>
+      <tr><td><strong>量測設備</strong></td><td>三軸移動相機系統（XY 線性馬達 + Z 螺桿），龍門架構</td></tr>
+      <tr><td><strong>自動對焦</strong></td><td>Z 軸上下移動相機，找出像素變異數最小點確保影像清晰</td></tr>
+      <tr><td><strong>孔徑定位</strong></td><td>透過左右上下四次拍攝，邊緣偵測計算中心點</td></tr>
+      <tr><td><strong>半徑量測</strong></td><td>分多張影像拼接（影像縫合），曲線擬合求圓心與半徑</td></tr>
+    </tbody>
+  </table>
+
+  <div class="dyk" style="margin-top:1rem">
+    <div class="dyk-icon">💡</div>
+    <div><div class="dyk-label">// 影像處理與系統搭配的關鍵</div><div class="dyk-text">影像處理難度不高，但需要<strong>高精度</strong>的光學系統與機構設計。<strong>光學解析度與機械精度</strong>相輔相成，缺一不可。系統需能快速切換拍攝位置與焦距，提升效率與準確性。</div></div>
+  </div>
+
+</div><!-- /p-app-slider -->
+
+<!-- ── 車燈量測 ── -->
+<div class="mpanel" id="p-app-headlight">
+
+  <div class="thero">
+    <div>
+      <div class="thl">// HEADLIGHT MEASUREMENT</div>
+      <div class="tht">車燈光型<br>AOI 量測系統</div>
+      <div class="thd">現代車燈設計已由傳統非透明透鏡轉為晶鑽玻璃（透明玻璃），改變光型設計方式。車燈光型必須符合法規要求，AOI 技術以數位相機取代傳統測光頭，大幅提升量測速度。</div>
+      <div class="srow">
+        <div class="si"><span class="sn">±10%</span><span class="sl">誤差容許範圍</span></div>
+        <div class="si"><span class="sn">16bit</span><span class="sl">動態範圍需求</span></div>
+        <div class="si"><span class="sn">96張</span><span class="sl">HDRI 合成影像數</span></div>
+      </div>
+    </div>
+    <div class="thvis">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--accent2);letter-spacing:.15em;margin-bottom:.6rem">// 傳統 vs AOI 量測</div>
+      <div class="vc vc-a"><div class="vcl" style="color:#f87171">❌ 傳統配光室量測</div><div class="vct">單點旋轉掃描</div><div class="vcd">設備昂貴（約千萬台幣）、空間需求大（須約10公尺距離）、量測速度慢且需旋轉車燈。</div></div>
+      <div class="vc vc-b"><div class="vcl" style="color:var(--accent2)">✅ AOI 技術</div><div class="vct">全畫面一次拍攝</div><div class="vcd">減少設備積與成本、量測速度大幅提升、空間需求縮小、無需長距離配光室。</div></div>
+      <div class="vc vc-c"><div class="vcl" style="color:#90aabf">⚠️ 核心挑戰</div><div class="vct">高動態範圍成像</div><div class="vcd">車燈亮度範圍達 16,000 級，一般相機 8 位元動態範圍不足，需要 HDRI 技術解決。</div></div>
+    </div>
+  </div>
+
+  <!-- 法規要求 -->
+  <div class="ptag" style="margin-top:1.5rem">// 車燈法規要求</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0 1.5rem">
+    <div style="background:var(--bg-light);border:1px solid rgba(79,195,247,.3);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent);margin-bottom:.5rem">// 歐規（European Standard）</div>
+      <p style="font-size:.86rem;line-height:1.75;color:var(--dim)">法規要求在車燈投射牆面上的多個指定點（以紅色十字標註）必須達到特定亮度標準，有些點要求亮度<strong style="color:var(--text)">高於某閾值</strong>，有些則要求<strong style="color:var(--text)">低於某閾值</strong>。</p>
+    </div>
+    <div style="background:var(--bg-light);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:1.2rem">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:#fbbf24;margin-bottom:.5rem">// 美規（American Standard）</div>
+      <p style="font-size:.86rem;line-height:1.75;color:var(--dim)">以近燈量測為主，遠燈與近燈的照明範圍及亮度要求不同。測量牆面上有一個可開啟的<strong style="color:var(--text)">測光窗口</strong>，用以穿透光線進行亮度量測。</p>
+    </div>
+  </div>
+
+  <!-- 傳統量測流程 -->
+  <div class="sec-header">
+    <span class="sec-num">COMPARE</span>
+    <span class="sec-title">傳統量測 vs AOI 量測比較</span>
+  </div>
+  <table class="cmp-table" style="margin-bottom:1.5rem">
+    <thead><tr><th>比較項目</th><th>傳統配光室量測</th><th>AOI 技術</th></tr></thead>
+    <tbody>
+      <tr><td><strong>設備成本</strong></td><td class="bad">約千萬台幣</td><td class="good">大幅降低</td></tr>
+      <tr><td><strong>空間需求</strong></td><td class="bad">約 10 公尺距離</td><td class="good">空間縮小</td></tr>
+      <tr><td><strong>量測速度</strong></td><td class="bad">慢，需逐點旋轉</td><td class="good">一次全畫面拍攝</td></tr>
+      <tr><td><strong>車燈狀態</strong></td><td class="bad">需旋轉車燈</td><td class="good">保持固定不旋轉</td></tr>
+      <tr><td><strong>動態範圍</strong></td><td class="good">測光頭專用高精度</td><td class="warn">需 HDRI 技術補足</td></tr>
+      <tr><td><strong>量測誤差</strong></td><td class="good">極精準</td><td class="good">誤差均在 ±10% 以內</td></tr>
+    </tbody>
+  </table>
+
+  <!-- HDRI 互動 -->
+  <div class="sec-header">
+    <span class="sec-num">CORE TECH</span>
+    <span class="sec-title">高動態範圍成像（HDRI）技術</span>
+  </div>
+
+  <div class="info-box yellow" style="margin-bottom:1rem">
+    一般數位相機僅有 <strong>8 位元（0~255 灰階）</strong>，動態範圍有限，無法同時捕捉車燈中明暗差異極大的光型。車燈亮度範圍達 <strong>16,000 級</strong>，需要 16 位元動態範圍才能完整捕捉。
+  </div>
+
+  <div class="filter-widget">
+    <div class="aw-title">// 互動示意：切換曝光時間，觀察各層細節捕捉</div>
+    <div class="filter-btns" id="hdriExpBtns">
+      <button class="f-btn active" data-exp="dark" onclick="setHDRIExp('dark')">2秒（暗部細節）</button>
+      <button class="f-btn" data-exp="mid1" onclick="setHDRIExp('mid1')">0.5秒（中亮部）</button>
+      <button class="f-btn" data-exp="mid2" onclick="setHDRIExp('mid2')">0.125秒（亮部）</button>
+      <button class="f-btn" data-exp="bright" onclick="setHDRIExp('bright')">0.04秒（極亮部）</button>
+      <button class="f-btn" data-exp="merge" onclick="setHDRIExp('merge')">✨ HDRI 合成結果</button>
+    </div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;margin-top:.8rem">
+      <div>
+        <canvas id="hdriCanvas" width="220" height="180"
+          style="border-radius:6px;border:1px solid var(--border);background:#0d1117;flex-shrink:0"></canvas>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);margin-top:.4rem;text-align:center" id="hdriCanvasLabel">曝光 2 秒</div>
+      </div>
+      <div style="flex:1;min-width:180px">
+        <div id="hdriExpName" style="font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:.4rem"></div>
+        <div id="hdriExpDesc" style="font-size:.9rem;line-height:1.82;color:var(--dim);margin-bottom:.7rem"></div>
+        <div style="background:var(--bg);border-radius:5px;padding:.7rem 1rem;border-left:2px solid var(--accent2);font-size:.84rem;color:var(--text);line-height:1.7">
+          <strong>相機反應曲線（Camera Response Curve）：</strong><br>
+          將多張不同曝光的影像，利用相機的已知反應函數，合成一張高動態範圍影像。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 曝光表格 -->
+  <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:1.2rem;margin:1.2rem 0">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.8rem">// 多重曝光分工表</div>
+    <table class="cmp-table" style="margin:0">
+      <thead><tr><th>曝光時間</th><th>用途說明</th></tr></thead>
+      <tbody>
+        <tr><td>2 秒</td><td>捕捉暗部細節</td></tr>
+        <tr><td>1 秒</td><td>次亮部細節</td></tr>
+        <tr><td>0.5 秒</td><td>中亮部細節</td></tr>
+        <tr><td>0.25 秒</td><td>較亮部細節</td></tr>
+        <tr><td>0.125 秒</td><td>亮部細節</td></tr>
+        <tr><td>0.0625 秒</td><td>非常亮部細節</td></tr>
+        <tr><td>0.04 秒</td><td>最亮部細節</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 產線小型系統 -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">SYSTEM</span>
+    <span class="sec-title">產線用 AOI 小型系統設計</span>
+  </div>
+
+  <div class="info-box blue" style="margin-bottom:1rem">
+    目標：將配光室的大型系統縮小成產線可用的小型輕便設備。<strong>不需旋轉車燈，保持固定狀態</strong>拍攝。
+  </div>
+
+  <table class="cmp-table" style="margin-bottom:1.2rem">
+    <thead><tr><th>元件</th><th>功能說明</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Fresnel 透鏡</strong></td><td>將大面積光型縮小成光學小光型，類似燈塔透鏡</td></tr>
+      <tr><td><strong>成像屏幕</strong></td><td>聚焦光型於屏幕上供相機拍攝</td></tr>
+      <tr><td><strong>CCD 攝影機</strong></td><td>拍攝光型影像並即時傳送至筆記型電腦</td></tr>
+      <tr><td><strong>筆記型電腦</strong></td><td>解析影像，判斷光型是否符合合格樣本（標準）</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 產線流程 -->
+  <div class="pipeline" style="margin:1rem 0 1.5rem">
+    <div class="ps"><div class="psn">01</div><div class="pst">車燈點亮</div><div class="psb">固定並投射光型至 Fresnel 透鏡</div></div>
+    <div class="ps"><div class="psn">02</div><div class="pst">光型聚焦</div><div class="psb">光型聚焦於成像屏幕上</div></div>
+    <div class="ps"><div class="psn">03</div><div class="pst">CCD 拍攝</div><div class="psb">拍攝光型影像</div></div>
+    <div class="ps"><div class="psn">04</div><div class="pst">影像比對</div><div class="psb">電腦對光型與標準光型的匹配度</div></div>
+    <div class="ps" style="background:rgba(0,229,204,.07);border-top:2px solid var(--accent2)"><div class="psn" style="color:var(--accent2)">05</div><div class="pst" style="color:var(--accent2)">合格判定</div><div class="psb">合格立即出貨；不合格送回維修</div></div>
+  </div>
+
+  <div class="dyk">
+    <div class="dyk-icon">💡</div>
+    <div><div class="dyk-label">// 高動態範圍的關鍵</div><div class="dyk-text">高動態範圍圖像技術是解決車燈亮度變化大問題的關鍵，可消除單張影像動態範圍不足的限制。AOI 方法誤差符合合格廠商需求，AOI 實驗中誤差均在 ±10% 以內，且牆面反射率和粉刷狀況會影響誤差，若改進牆面粉刷品質可進一步降低誤差。</div></div>
+  </div>
+
+</div><!-- /p-app-headlight -->
+
+<!-- ── 編碼器校正 ── -->
+<div class="mpanel" id="p-app-encoder">
+
+  <div class="thero">
+    <div>
+      <div class="thl">// ENCODER CALIBRATION</div>
+      <div class="tht">編碼器<br>AOI 自動校正系統</div>
+      <div class="thd">編碼器用於自動化控制領域中量測機械位置與角度，光柵型編碼器利用黑白相間的光柵條紋讀取位置。AOI 系統能將人工調校時間從 5~9 分鐘縮短至 2 分鐘以內，並達到 2μm 的光路偏擺精度。</div>
+      <div class="srow">
+        <div class="si"><span class="sn">&lt;2μm</span><span class="sl">偏擺精度目標</span></div>
+        <div class="si"><span class="sn">&lt;2min</span><span class="sl">校正時間目標</span></div>
+        <div class="si"><span class="sn">4μm</span><span class="sl">人工調校精度</span></div>
+      </div>
+    </div>
+    <div class="thvis">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--accent2);letter-spacing:.15em;margin-bottom:.6rem">// 編碼器核心問題</div>
+      <div class="vc vc-a"><div class="vcl" style="color:var(--accent)">同心度不足</div><div class="vct">安裝偏差問題</div><div class="vcd">安裝時光柵盤與旋轉軸心未完全對準，造成旋轉時光柵盤出現左右偏擺，影響量測精度。</div></div>
+      <div class="vc vc-b"><div class="vcl" style="color:var(--accent2)">左右偏擺</div><div class="vct">偏擺定義</div><div class="vcd">光柵盤在旋轉過程中除了繞軸心旋轉外，還會有橫向見動。偏擺允許範圍為左右各 2 微米以內。</div></div>
+      <div class="vc vc-c"><div class="vcl" style="color:#90aabf">人工校正限制</div><div class="vct">效率瓶頸</div><div class="vcd">人工調整誤差通常只能調到約四個微米，調校時間長約五到九分鐘，且精度與穩定性難以保證。</div></div>
+    </div>
+  </div>
+
+  <!-- 系統規格 -->
+  <div class="ptag" style="margin-top:1.5rem">// AOI 自動校正系統規格</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0 1.5rem">
+    <table class="cmp-table" style="margin:0">
+      <thead><tr><th>設計目標</th><th>數值與要求</th></tr></thead>
+      <tbody>
+        <tr><td>光路偏擺精度</td><td class="good">&lt; 2 micrometer</td></tr>
+        <tr><td>人工調校可達精度</td><td class="warn">約 4 micrometer</td></tr>
+        <tr><td>校正時間</td><td class="good">&lt; 2 分鐘</td></tr>
+      </tbody>
+    </table>
+    <table class="cmp-table" style="margin:0">
+      <thead><tr><th>硬體元件</th><th>功能說明</th></tr></thead>
+      <tbody>
+        <tr><td><strong>相機</strong></td><td>影像擷取，解析度高達 2592×1944 像素</td></tr>
+        <tr><td><strong>遠心鏡頭</strong></td><td>觀看範圍小、避免視差，提供高精度影像</td></tr>
+        <tr><td><strong>旋轉機構</strong></td><td>使編碼器旋轉，便於量測偏擺</td></tr>
+        <tr><td><strong>補正推板</strong></td><td>透過機械推動方式修正偏擺誤差差</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 偏擺量測互動 -->
+  <div class="sec-header">
+    <span class="sec-num">METHOD</span>
+    <span class="sec-title">偏擺量測原理與互動示意</span>
+  </div>
+
+  <div class="filter-widget">
+    <div class="aw-title">// 互動示意：拖拉滑桿模擬偏擺，觀察校正前後差異</div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        <div style="display:flex;gap:.6rem;align-items:center">
+          <span style="font-size:.8rem;color:var(--dim);font-family:'Share Tech Mono',monospace;width:60px">偏擺量：</span>
+          <input id="encEcc" type="range" min="0" max="40" value="20"
+            style="width:120px;accent-color:var(--accent)" oninput="updateEncoder()">
+          <span id="encEccVal" style="font-family:'Share Tech Mono',monospace;font-size:.82rem;color:var(--accent);width:40px">20</span>
+        </div>
+        <canvas id="encoderCanvas" width="220" height="220"
+          style="border-radius:6px;border:1px solid var(--border);background:#0d1117"></canvas>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);text-align:center">旋轉一圈的光柵盤偏擺軌跡</div>
+      </div>
+      <div style="flex:1;min-width:180px">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent2);margin-bottom:.8rem">// 偏擺值計算</div>
+        <div style="background:var(--bg);border-radius:6px;padding:1rem 1.2rem;border:1px solid var(--accent);margin-bottom:.8rem">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--accent2);margin-bottom:.5rem">偏心值 = (X_max − X_min) / 2</div>
+          <div style="font-size:1.5rem;font-weight:700;font-family:'Share Tech Mono',monospace;color:var(--accent)" id="encOffsetVal">10.0 μm</div>
+        </div>
+        <div id="encJudge" style="border-radius:5px;padding:.7rem 1rem;font-size:.88rem;font-weight:700;margin-bottom:.8rem"></div>
+        <div style="background:var(--bg);border-radius:5px;padding:.7rem 1rem;border-left:2px solid var(--accent2);font-size:.84rem;color:var(--text);line-height:1.7">
+          <strong>記錄所有點的 X_max 與 X_min，</strong>計算偏心值（偏擺幅度），找出誤差最大位置，針對該角度進行機械調整補正。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 影像處理流程 -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">FLOW</span>
+    <span class="sec-title">影像擷取與處理流程</span>
+  </div>
+
+  <div class="proc-pipeline" id="encPipeline">
+    <div class="proc-step active" onclick="setEncStep(0)">
+      <div class="proc-sn">STEP 01</div>
+      <div class="proc-st">影像擷取</div>
+      <div class="proc-sb">高解析度相機拍攝光柵盤影像</div>
+    </div>
+    <div class="proc-step" onclick="setEncStep(1)">
+      <div class="proc-sn">STEP 02</div>
+      <div class="proc-st">區域裁切</div>
+      <div class="proc-sb">擷取中間區域以縮小處理範圍</div>
+    </div>
+    <div class="proc-step" onclick="setEncStep(2)">
+      <div class="proc-sn">STEP 03</div>
+      <div class="proc-st">影像二值化</div>
+      <div class="proc-sb">轉換為黑白二值影像</div>
+    </div>
+    <div class="proc-step" onclick="setEncStep(3)">
+      <div class="proc-sn">STEP 04</div>
+      <div class="proc-st">邊緣檢測</div>
+      <div class="proc-sb">找光柵條紋邊界並標定邊緣標</div>
+    </div>
+    <div class="proc-step" onclick="setEncStep(4)">
+      <div class="proc-sn">STEP 05</div>
+      <div class="proc-st">偏擺計算</div>
+      <div class="proc-sb">記錄旋轉過程中紅色標記左右偏移量</div>
+    </div>
+    <div class="proc-step" onclick="setEncStep(5)">
+      <div class="proc-sn">STEP 06</div>
+      <div class="proc-st">補正</div>
+      <div class="proc-sb">根據偏擺數據進行機械補正</div>
+    </div>
+  </div>
+  <div id="encStepDetail" style="background:var(--bg-light);border:1px solid var(--border);border-radius:0 0 6px 6px;padding:1.2rem;margin-bottom:1.5rem">
+    <div id="encStepTitle" style="font-size:.95rem;font-weight:700;color:var(--accent);margin-bottom:.4rem"></div>
+    <div id="encStepDesc" style="font-size:.9rem;line-height:1.82;color:var(--dim)"></div>
+  </div>
+
+  <!-- 校正效果互動 -->
+  <div class="sec-header">
+    <span class="sec-num">RESULT</span>
+    <span class="sec-title">校正效果展示</span>
+  </div>
+
+  <div class="filter-widget">
+    <div class="aw-title">// 互動示意：切換校正前後，觀察偏擺軌跡改善</div>
+    <div class="filter-btns" id="encResultBtns">
+      <button class="f-btn active" data-enc-result="before" onclick="setEncResult('before')">校正前</button>
+      <button class="f-btn" data-enc-result="after" onclick="setEncResult('after')">校正後</button>
+    </div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;margin-top:.8rem">
+      <canvas id="encResultCanvas" width="220" height="160"
+        style="border-radius:6px;border:1px solid var(--border);background:#0d1117;flex-shrink:0"></canvas>
+      <div style="flex:1;min-width:180px">
+        <div id="encResultDesc" style="font-size:.9rem;line-height:1.82;color:var(--dim);margin-bottom:.8rem"></div>
+        <table class="cmp-table" style="margin:0">
+          <thead><tr><th>編碼器樣本</th><th>初始偏心值</th><th>校正後偏心值</th><th>校正結果</th></tr></thead>
+          <tbody>
+            <tr><td>樣品 1</td><td>217 μm</td><td class="good">0.6 μm</td><td class="good">達標 (&lt;2μm)</td></tr>
+            <tr><td>樣品 2</td><td>228.9 μm</td><td class="good">1.449 μm</td><td class="good">達標 (&lt;2μm)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 關鍵詞 -->
+  <div class="sec-divider"></div>
+  <div class="sec-header" style="margin-top:0">
+    <span class="sec-num">GLOSSARY</span>
+    <span class="sec-title">重要關鍵詞</span>
+  </div>
+  <table class="cmp-table">
+    <thead><tr><th>名稱</th><th>定義與說明</th></tr></thead>
+    <tbody>
+      <tr><td><strong>光柵型編碼器</strong></td><td>利用黑白相間光柵條紋取位置的光學編碼器，具絕對位置特性</td></tr>
+      <tr><td><strong>同心度</strong></td><td>光柵盤與旋轉軸心的同軸程度，影響偏擺與量測精度</td></tr>
+      <tr><td><strong>偏擺（Eccentricity）</strong></td><td>光柵盤旋轉時的左右橫向見動，控制在左右各 2 微米以內</td></tr>
+      <tr><td><strong>AOI 自動校正</strong></td><td>利用影像擷取與分析自動完成精密校正的系統</td></tr>
+      <tr><td><strong>遠心鏡頭</strong></td><td>專用於高精度影像的鏡頭，可避免視差與變形</td></tr>
+      <tr><td><strong>補正推板</strong></td><td>透過機械推動方式修正光柵盤的偏擺誤差</td></tr>
+    </tbody>
+  </table>
+
+  <div class="dyk" style="margin-top:1rem">
+    <div class="dyk-icon">🔄</div>
+    <div><div class="dyk-label">// 偏擺量測的直覺類比</div><div class="dyk-text">把光柵盤想像成旋轉的鑲嵌，理想狀態下鑲嵌只會前後擺動（旋轉），若鑲嵌頭部左右搖晃（偏擺），就代表同心度不足。透過 AOI 系統如同監視高精度鑲嵌擺動位置，並用推板將鑲嵌頭調回正中，達成精準校正。</div></div>
+  </div>
+
+</div><!-- /p-app-encoder -->
 
 
 </div>
@@ -5758,13 +6252,344 @@ function initLEDSection(){
   setLEDDefect('scratch');
 }
 
+// ══════════════════════════════
+// 滑塊量測 JS
+// ══════════════════════════════
+const sliderDirData = {
+  all: {
+    name: '完整四方向拍攝流程',
+    desc: '孔徑中心點透過四次拍攝定位：先從左右各拍一次找出 X 軸中心，再從上下各拍一次找出 Y 軸中心，合併得到完整的孔徑中心座標。',
+  },
+  lr: {
+    name: '左右拍攝 → 計算 X 軸中心',
+    desc: '相機從左側拍攝，透過邊緣偵測找出孔徑左邊緣位置；再從右側拍攝找出右邊緣。X 中心 = (左邊緣座標 + 右邊緣座標) ÷ 2。',
+  },
+  tb: {
+    name: '上下拍攝 → 計算 Y 軸中心',
+    desc: '相機從上方拍攝找出孔徑上邊緣；再從下方拍攝找出下邊緣。Y 中心 = (上邊緣座標 + 下邊緣座標) ÷ 2。兩軸合併即為孔徑中心點。',
+  },
+  arc: {
+    name: '圓弧拼合 → 曲線擬合求半徑',
+    desc: '對於大尺寸的導軌孔，視野不夠大無法一次拍攝完整圓弧，需分多張拍攝後進行影像縫合（Image Stitching），再用曲線擬合（Curve Fitting）求出圓心與半徑。',
+  },
+};
+
+const sliderSteps = [
+  { title: '自動對焦', desc: 'Z 軸移動相機至最佳對焦點，確保影像清晰。透過計算影像的像素變異數，找到使影像最清晰的 Z 軸位置後固定，確保後續量測影像不會因模糊導致邊緣偵測誤差。' },
+  { title: '孔徑拍攝', desc: '依序移動相機至各孔位置，對每個孔徑分別從左、右、上、下四個方向各拍一張影像。拍攝範圍約 0.207mm × 0.805mm，約 500 個像素，以簡化處理。' },
+  { title: '影像處理', desc: '對每張拍攝影像進行邊緣偵測，精確找出孔徑的邊緣位置。利用左右邊緣計算 X 軸中心點，上下邊緣計算 Y 軸中心點，並透過圓弧擬合求出半徑。' },
+  { title: '數據判斷', desc: '將量測到的孔徑中心座標與半徑數值，對比設計規格中預設的標準值。判斷尺寸是否在容許誤差（±20μm）範圍內，超出範圍則標記為不合格。' },
+  { title: '重複量測', desc: '依滑塊上所有孔洞的數量，逐一重複上述流程完成全部孔徑的量測。系統自動記錄每個孔徑的量測結果，最終輸出完整的尺寸報告。' },
+];
+
+function setSliderDir(type) {
+  document.querySelectorAll('[data-sdir]').forEach(b =>
+    b.classList.toggle('active', b.getAttribute('data-sdir') === type)
+  );
+  const d = sliderDirData[type];
+  document.getElementById('sliderDirName').textContent = d.name;
+  document.getElementById('sliderDirDesc').textContent = d.desc;
+  drawSliderCanvas(type);
+}
+
+function drawSliderCanvas(type) {
+  const c = document.getElementById('sliderCanvas');
+  if (!c) return;
+  const ctx = c.getContext('2d'), w = c.width, h = c.height;
+  ctx.clearRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2, r = 60;
+  // grid
+  ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1;
+  for (let i = 0; i < w; i += 20) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke(); }
+  for (let j = 0; j < h; j += 20) { ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(w, j); ctx.stroke(); }
+  // hole outline
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(79,195,247,.3)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = 'rgba(79,195,247,.05)'; ctx.fill();
+
+  if (type === 'all' || type === 'lr') {
+    // left camera
+    ctx.fillStyle = '#4fc3f7';
+    ctx.beginPath(); ctx.moveTo(15, cy); ctx.lineTo(30, cy - 10); ctx.lineTo(30, cy + 10); ctx.closePath(); ctx.fill();
+    // right camera
+    ctx.beginPath(); ctx.moveTo(w - 15, cy); ctx.lineTo(w - 30, cy - 10); ctx.lineTo(w - 30, cy + 10); ctx.closePath(); ctx.fill();
+    // left edge line
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(cx - r, 0); ctx.lineTo(cx - r, h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + r, 0); ctx.lineTo(cx + r, h); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#fbbf24'; ctx.font = '9px Share Tech Mono,monospace'; ctx.textAlign = 'center';
+    ctx.fillText('左邊緣', cx - r, 12);
+    ctx.fillText('右邊緣', cx + r, 12);
+  }
+  if (type === 'all' || type === 'tb') {
+    // top camera
+    ctx.fillStyle = '#00e5cc';
+    ctx.beginPath(); ctx.moveTo(cx, 15); ctx.lineTo(cx - 10, 30); ctx.lineTo(cx + 10, 30); ctx.closePath(); ctx.fill();
+    // bottom camera
+    ctx.beginPath(); ctx.moveTo(cx, h - 15); ctx.lineTo(cx - 10, h - 30); ctx.lineTo(cx + 10, h - 30); ctx.closePath(); ctx.fill();
+    // edge lines
+    ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(0, cy - r); ctx.lineTo(w, cy - r); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, cy + r); ctx.lineTo(w, cy + r); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#a78bfa'; ctx.font = '9px Share Tech Mono,monospace'; ctx.textAlign = 'left';
+    ctx.fillText('上邊緣', w - 50, cy - r - 4);
+    ctx.fillText('下邊緣', w - 50, cy + r + 12);
+  }
+  if (type === 'arc') {
+    // show stitched arc sections
+    const colors = ['#4fc3f7', '#00e5cc', '#a78bfa'];
+    for (let i = 0; i < 3; i++) {
+      const startA = (i / 3) * Math.PI * 2;
+      const endA = ((i + 1) / 3) * Math.PI * 2;
+      ctx.beginPath(); ctx.arc(cx, cy, r, startA, endA);
+      ctx.strokeStyle = colors[i]; ctx.lineWidth = 4; ctx.stroke();
+      const midA = (startA + endA) / 2;
+      ctx.fillStyle = colors[i]; ctx.font = 'bold 9px Share Tech Mono,monospace'; ctx.textAlign = 'center';
+      ctx.fillText('圖' + (i + 1), cx + (r + 18) * Math.cos(midA), cy + (r + 18) * Math.sin(midA) + 3);
+    }
+    // fitted circle
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(251,191,36,.5)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+    ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#fbbf24'; ctx.font = '9px Share Tech Mono,monospace'; ctx.textAlign = 'center';
+    ctx.fillText('曲線擬合', cx, cy + 4);
+  }
+  // center point
+  ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#fbbf24'; ctx.fill();
+}
+
+function setSliderStep(idx) {
+  document.querySelectorAll('#sliderPipeline .proc-step').forEach((el, i) =>
+    el.classList.toggle('active', i === idx)
+  );
+  document.getElementById('sliderStepTitle').textContent = sliderSteps[idx].title;
+  document.getElementById('sliderStepDesc').textContent = sliderSteps[idx].desc;
+}
+
+function initSliderSection() {
+  setSliderDir('all');
+  setSliderStep(0);
+}
+
+// ══════════════════════════════
+// 車燈量測 JS
+// ══════════════════════════════
+const hdriExpData = {
+  dark: { name: '長曝光（2 秒）— 暗部細節', desc: '極長曝光時間讓暗部細節浮現，但亮部區域完全過曝（純白）。這張影像只保留暗部有效資訊。', label: '曝光 2 秒', gamma: 3.5 },
+  mid1: { name: '中曝光（0.5 秒）— 中亮部', desc: '中等曝光時間，捕捉中間亮度範圍的細節。暗部略暗，亮部仍有些過曝。', label: '曝光 0.5 秒', gamma: 1.8 },
+  mid2: { name: '短曝光（0.125 秒）— 亮部細節', desc: '較短曝光時間，讓亮部細節呈現，暗部細節消失。只保留高亮度區域的有效資訊。', label: '曝光 0.125 秒', gamma: 0.7 },
+  bright: { name: '極短曝光（0.04 秒）— 最亮部', desc: '極短曝光，只捕捉最亮的區域細節，其餘全黑。對應車燈正中心最高亮度區域。', label: '曝光 0.04 秒', gamma: 0.3 },
+  merge: { name: '✨ HDRI 合成結果', desc: '利用相機反應曲線（Camera Response Curve），將所有曝光影像合成為一張 16 位元高動態範圍影像，完整捕捉從最暗到最亮的所有細節。', label: 'HDRI 合成影像', gamma: -1 },
+};
+
+function drawHDRICanvas(type) {
+  const c = document.getElementById('hdriCanvas');
+  if (!c) return;
+  const ctx = c.getContext('2d'), w = c.width, h = c.height;
+  ctx.clearRect(0, 0, w, h);
+  const info = hdriExpData[type];
+  const imgData = ctx.createImageData(w, h);
+  const cx = w * 0.55, cy = h * 0.45;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const dx = x - cx, dy = y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const maxDist = Math.sqrt(cx * cx + cy * cy);
+      // simulate light pattern with hotspot
+      let intensity = Math.max(0, 1 - dist / (maxDist * 0.7));
+      intensity = Math.pow(intensity, 1.5);
+      // add some shape variation
+      intensity *= (1 + 0.3 * Math.cos(dx * 0.05) * Math.cos(dy * 0.05));
+      intensity = Math.min(1, intensity);
+      let v;
+      if (info.gamma === -1) {
+        // HDRI merged: full dynamic range
+        v = Math.round(intensity * 255);
+        imgData.data[i] = Math.min(255, v * 1.1);
+        imgData.data[i + 1] = Math.min(255, v * 0.9);
+        imgData.data[i + 2] = Math.min(255, v * 0.6);
+      } else {
+        v = Math.round(Math.min(1, Math.pow(intensity, 1 / info.gamma)) * 255);
+        imgData.data[i] = v;
+        imgData.data[i + 1] = Math.round(v * 0.85);
+        imgData.data[i + 2] = Math.round(v * 0.5);
+      }
+      imgData.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+  // spec points overlay
+  const specPts = [
+    { x: w * 0.55, y: h * 0.35, ok: true },
+    { x: w * 0.3, y: h * 0.5, ok: true },
+    { x: w * 0.75, y: h * 0.55, ok: false },
+    { x: w * 0.45, y: h * 0.65, ok: true },
+  ];
+  specPts.forEach(p => {
+    ctx.beginPath(); ctx.moveTo(p.x - 6, p.y); ctx.lineTo(p.x + 6, p.y);
+    ctx.beginPath(); ctx.moveTo(p.x, p.y - 6); ctx.lineTo(p.x, p.y + 6);
+    ctx.strokeStyle = p.ok ? '#4ade80' : '#f87171'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(p.x - 6, p.y); ctx.lineTo(p.x + 6, p.y);
+    ctx.moveTo(p.x, p.y - 6); ctx.lineTo(p.x, p.y + 6);
+    ctx.stroke();
+  });
+}
+
+function setHDRIExp(type) {
+  document.querySelectorAll('[data-exp]').forEach(b =>
+    b.classList.toggle('active', b.getAttribute('data-exp') === type)
+  );
+  const info = hdriExpData[type];
+  document.getElementById('hdriExpName').textContent = info.name;
+  document.getElementById('hdriExpDesc').textContent = info.desc;
+  document.getElementById('hdriCanvasLabel').textContent = info.label;
+  drawHDRICanvas(type);
+}
+
+function initHeadlightSection() {
+  setHDRIExp('dark');
+}
+
+// ══════════════════════════════
+// 編碼器校正 JS
+// ══════════════════════════════
+const encSteps = [
+  { title: '影像擷取', desc: '高解析度相機（2592×1944 像素）搭配遠心鏡頭，拍攝光柵盤影像。拍攝範圍約 1.073mm × 0.805mm，約 500 個像素，以簡化後續影像處理。' },
+  { title: '區域裁切', desc: '擷取影像中間區域以縮小處理範圍，排除邊緣雜訊干擾。中間區域包含最清晰的光柵條紋，有效提高後續二值化與邊緣偵測的準確度。' },
+  { title: '影像二值化', desc: '將灰階影像轉換為黑白二值影像，方便後續邊緣檢測。利用 Otsu 自動門檻化方法，根據直方圖自動找到最佳閾值，區分光柵條紋的黑色與白色區域。' },
+  { title: '邊緣檢測', desc: '透過影像處理尋找光柵黑白條紋邊界，標示邊緣位置（標記）。標記旋轉光柵盤上的特定點（以紅色十字 X 表示），並記錄該角度下紅色標記的左右偏移量。' },
+  { title: '偏擺計算', desc: '每旋轉 3° 拍攝一次，共計 120 個點，記錄每個點的最大偏擺值 X_max 與最小偏擺值 X_min，計算偏心值（偏擺幅度）= (X_max − X_min) / 2，找出誤差最大位置。' },
+  { title: '補正', desc: '根據偏擺數據，針對誤差最大的角度位置進行機械調整補正。透過補正推板進行粗調，快速將偏擺控制在可接受範圍內，再逐步調整推板邊拍攝邊調整，實時監控偏擺變化直至達標。' },
+];
+
+function setEncStep(idx) {
+  document.querySelectorAll('#encPipeline .proc-step').forEach((el, i) =>
+    el.classList.toggle('active', i === idx)
+  );
+  document.getElementById('encStepTitle').textContent = encSteps[idx].title;
+  document.getElementById('encStepDesc').textContent = encSteps[idx].desc;
+}
+
+function updateEncoder() {
+  const ecc = parseInt(document.getElementById('encEcc').value);
+  document.getElementById('encEccVal').textContent = ecc;
+  const offset = ecc / 2;
+  document.getElementById('encOffsetVal').textContent = offset.toFixed(1) + ' μm';
+  const judge = document.getElementById('encJudge');
+  if (offset <= 2) {
+    judge.style.background = 'rgba(74,222,128,.08)';
+    judge.style.border = '1px solid rgba(74,222,128,.3)';
+    judge.style.color = '#4ade80';
+    judge.textContent = '✅ 達標 — 偏擺值在 2μm 以內，校正合格';
+  } else {
+    judge.style.background = 'rgba(248,113,113,.08)';
+    judge.style.border = '1px solid rgba(248,113,113,.3)';
+    judge.style.color = '#f87171';
+    judge.textContent = '❌ 需校正 — 偏擺值超過 2μm，需進行補正';
+  }
+  drawEncoderCanvas(ecc);
+}
+
+function drawEncoderCanvas(ecc) {
+  const c = document.getElementById('encoderCanvas');
+  if (!c) return;
+  const ctx = c.getContext('2d'), w = c.width, h = c.height;
+  ctx.clearRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2, r = 80;
+  const scale = ecc * 1.5;
+  // ideal circle (gray)
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,.1)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+  ctx.stroke(); ctx.setLineDash([]);
+  // actual eccentric path
+  ctx.beginPath();
+  for (let a = 0; a <= Math.PI * 2; a += 0.05) {
+    const rx = cx + (r + scale * Math.cos(a)) * Math.cos(a);
+    const ry = cy + (r + scale * Math.cos(a)) * Math.sin(a);
+    a === 0 ? ctx.moveTo(rx, ry) : ctx.lineTo(rx, ry);
+  }
+  ctx.strokeStyle = ecc > 4 ? '#f87171' : (ecc > 2 ? '#fbbf24' : '#4ade80');
+  ctx.lineWidth = 2; ctx.stroke();
+  // center
+  ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#fbbf24'; ctx.fill();
+  // X axis measurement lines
+  const xMax = cx + r + scale;
+  const xMin = cx - r - scale;
+  ctx.strokeStyle = 'rgba(0,229,204,.5)'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);
+  ctx.beginPath(); ctx.moveTo(xMax, cy - 20); ctx.lineTo(xMax, cy + 20); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(xMin, cy - 20); ctx.lineTo(xMin, cy + 20); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(0,229,204,.7)'; ctx.font = '8px Share Tech Mono,monospace'; ctx.textAlign = 'center';
+  ctx.fillText('X_max', xMax, cy - 24);
+  ctx.fillText('X_min', xMin, cy - 24);
+}
+
+function setEncResult(type) {
+  document.querySelectorAll('[data-enc-result]').forEach(b =>
+    b.classList.toggle('active', b.getAttribute('data-enc-result') === type)
+  );
+  const c = document.getElementById('encResultCanvas');
+  if (!c) return;
+  const ctx = c.getContext('2d'), w = c.width, h = c.height;
+  ctx.clearRect(0, 0, w, h);
+  const isBefore = type === 'before';
+  const amplitude = isBefore ? 35 : 3;
+  const color = isBefore ? '#f87171' : '#4ade80';
+  // draw waveform
+  ctx.strokeStyle = 'rgba(255,255,255,.1)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
+  ctx.strokeStyle = color; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let x = 0; x < w; x++) {
+    const angle = (x / w) * Math.PI * 2;
+    const y = h / 2 + amplitude * Math.sin(angle);
+    x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  // tolerance band
+  ctx.fillStyle = 'rgba(74,222,128,.08)';
+  ctx.fillRect(0, h / 2 - 6, w, 12);
+  ctx.strokeStyle = 'rgba(74,222,128,.3)'; ctx.lineWidth = 1; ctx.setLineDash([3, 2]);
+  ctx.beginPath(); ctx.moveTo(0, h / 2 - 6); ctx.lineTo(w, h / 2 - 6); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, h / 2 + 6); ctx.lineTo(w, h / 2 + 6); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(74,222,128,.6)'; ctx.font = '8px Share Tech Mono,monospace'; ctx.textAlign = 'right';
+  ctx.fillText('±2μm 容許範圍', w - 5, h / 2 - 9);
+  document.getElementById('encResultDesc').textContent = isBefore
+    ? `校正前：偏擺幅度達 ${amplitude * 2} μm，遠超容許範圍（±2μm），光柵盤嚴重偏心，量測結果不可靠。`
+    : `校正後：偏擺幅度降至 ${amplitude * 2} μm 以內，完全符合 ±2μm 容許範圍，系統校正成功，可正常量測。`;
+}
+
+function initEncoderSection() {
+  updateEncoder();
+  setEncStep(0);
+  setEncResult('before');
+}
+
 // 影像匹配初始化（加入到 setTimeout 最末）
 initMatchDemo();
 setPyramidLevel(3);
 setSIFTStep(0);
 initClassifySection();
 initGolfSection();
+initSliderSection();
+initHeadlightSection();
+initEncoderSection();
 
+
+// 確保「取像模組 (#pi)」初始顯示相機 tab
+document.querySelectorAll('#pi .mpanel').forEach(p => p.classList.remove('active'));
+document.querySelectorAll('#pi .mtab').forEach(t => t.classList.remove('active'));
+const camPanel = document.getElementById('p-cam');
+if(camPanel) camPanel.classList.add('active');
+const firstMtab = document.querySelector('#pi .mtab');
+if(firstMtab) firstMtab.classList.add('active');
 // ══════════════════════════════
 // INIT ALL
 // ══════════════════════════════
